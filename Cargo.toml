@@ -1,0 +1,9 @@
+[package]
+name = "vedirect"
+version = "0.1.0"
+authors = ["dbr <dbr.onix@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+nom = "5.1"
+thiserror = "1.0"
