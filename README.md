@@ -13,3 +13,15 @@ Based of the `VE.Direct-Protocol-3.27.pdf`.
 Currently only implements the "Text-mode" (read only) interface,
 
 > The VE.Direct interface includes two modes: Text-mode and the HEX-mode. The purpose of the Text-mode is to make retrieving information extremely simple. The product will periodically transmit all run-time fields. The HEX-mode allows not only to read data but also write data, for example, change settings.
+
+
+## Status
+
+Early development.
+
+- [x] Initial protocol parser
+- [x] Initial mapping of most useful BMV 700 fields
+- [ ] More complete testing of parser
+- [ ] Mapping of all fields of BMV
+- [ ] Mapping of all fields for MPPT
+- [ ] Mapping of all fields for inverters
