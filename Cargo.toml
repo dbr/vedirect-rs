@@ -7,3 +7,7 @@ edition = "2018"
 [dependencies]
 nom = "5.1"
 thiserror = "1.0"
+
+[dev-dependencies]
+serial = "0.4"
+anyhow = "*"

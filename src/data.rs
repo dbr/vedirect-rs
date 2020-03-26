@@ -25,6 +25,7 @@ impl From<std::num::ParseFloatError> for VEError {
 // struct Bmv600 {}
 
 /// Data for BMV 700 battery monitor series
+#[derive(Debug)]
 pub struct Bmv700 {
     /// Main (channel 1) battery voltage. Labelled `V`
     /// Units: V
@@ -97,7 +98,7 @@ fn convert_ttg(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Minute, VEE
     Ok(cleaned)
 }
 
-pub fn mapraw(fields: Vec<crate::parser::Field>) -> Result<Bmv700, VEError> {
+pub fn mapraw(fields: &Vec<crate::parser::Field>) -> Result<Bmv700, VEError> {
     // Convert from list into map
     let mut hm: HashMap<&str, &str> = HashMap::new();
     for f in fields {
@@ -119,7 +120,7 @@ fn test_mapping() {
         "\r\nP\t123\r\nCE\t53\r\nSOC\t452\r\nTTG\t60\r\nRelay\tOFF\r\nAlarm\tOFF\r\nV\t232\r\nChecksum\t12".as_bytes(),
     )
     .unwrap();
-    let data = mapraw(raw).unwrap();
+    let data = mapraw(&raw).unwrap();
     assert_eq!(data.power, 123);
     assert_eq!(data.consumed, Some("53".into()));
     assert_eq!(data.soc, Some(45.2));
