@@ -3,8 +3,12 @@ name = "vedirect"
 version = "0.1.0"
 authors = ["dbr <dbr.onix@gmail.com>"]
 edition = "2018"
+
 license = "Unlicense"
 description = "Library to parse the Victron Energy VE.Direct protocol and map the data to useful structs with clear units"
+repository = "https://github.com/dbr/vedirect-rs/"
+readme = "README.md"
+keywords = ["solar", "serial", "parser"]
 
 [dependencies]
 nom = "5.1"
