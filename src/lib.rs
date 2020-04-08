@@ -17,4 +17,4 @@ pub enum VEError {
 
 // Re-export
 pub use parser::parse;
-pub use data::mapraw;
+pub use data::map_fields;

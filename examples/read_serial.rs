@@ -13,9 +13,9 @@ pub fn record(port: &mut dyn SerialPort) -> anyhow::Result<()> {
     let mut buf: [u8; 1024] = [0; 1024];
     loop {
         let r = port.read(&mut buf)?;
-        let p = vedirect::parse(&buf)?;
+        let (p, _remainder) = vedirect::parse(&buf)?;
         println!("Got data: {:#?}", &p);
-        let mapped = vedirect::mapraw(&p)?;
+        let mapped = vedirect::map_fields(&p)?;
         println!("Mapped data {:#?}", &mapped);
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
