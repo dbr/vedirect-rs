@@ -8,6 +8,9 @@ pub enum VEError {
     #[error("error parsing data")]
     Parse(String),
 
+    #[error("Need more data to parse successfully")]
+    NeedMoreData,
+
     #[error("checksum did not match recieved data")]
     ChecksumError,
 
