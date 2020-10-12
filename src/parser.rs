@@ -1,4 +1,4 @@
-use crate::VEError::VEError;
+use crate::ve_error::VeError;
 
 #[derive(Debug)]
 pub struct Field<'a> {
@@ -39,7 +39,7 @@ fn rawparse(data: &[u8]) -> nom::IResult<&[u8], (Vec<Field>, Checksum)> {
             // Newline
             tag("\r\n"),
             // Field, tab, value
-            separated_pair(field_label, char('\t'), take_until("\r\n"))
+            separated_pair(field_label, char('\t'), take_until("\r\n")),
         );
         // Map data
         let f = map(parsed, |(_nl, d)| Field {
@@ -52,7 +52,7 @@ fn rawparse(data: &[u8]) -> nom::IResult<&[u8], (Vec<Field>, Checksum)> {
         // "Checksum" <tab> <checksum byte>
         let parsed = pair(
             tag("\r\n"),
-            separated_pair(tag("Checksum"), char('\t'), anychar)
+            separated_pair(tag("Checksum"), char('\t'), anychar),
         );
         map(parsed, |(_nl, d)| Checksum { value: d.1 as u8 })(input)
     }
@@ -62,60 +62,72 @@ fn rawparse(data: &[u8]) -> nom::IResult<&[u8], (Vec<Field>, Checksum)> {
     chunk(data)
 }
 
-pub fn parse(data: &[u8]) -> Result<(Vec<Field>, &[u8]), VEError> {
+pub fn parse(data: &[u8]) -> Result<(Vec<Field>, &[u8]), VeError> {
     let (data, remainder) = match rawparse(data) {
-        Err(nom::Err::Error(e)) => Err(VEError::Parse(format!(
+        Err(nom::Err::Error(e)) => Err(VeError::Parse(format!(
             "Parse error: {:?} - remaining data: {:?}",
             e.1,
             std::str::from_utf8(e.0),
         ))),
-        Err(nom::Err::Incomplete(_needed)) => Err(VEError::NeedMoreData),
-        Err(e) => Err(VEError::Parse(format!("Unknown error while parsing: {}", e))),
+        Err(nom::Err::Incomplete(_needed)) => Err(VeError::NeedMoreData),
+        Err(e) => Err(VeError::Parse(format!(
+            "Unknown error while parsing: {}",
+            e
+        ))),
         Ok((remainder, data)) => Ok((data, remainder)),
     }?;
-    let (fields, checksum) = data;
-    println!("Checksum: {:?}\nFields: {:#?}", checksum, fields);
+    let (fields, _checksum) = data;
+    // println!("Checksum: {:?}\nFields: {:#?}", checksum, fields);
     Ok((fields, &remainder))
 }
 
-#[test]
-fn test_parse_line() {
-    let data = "\r\nfield1\tvalue1\r\nfield2\tvalue2\r\nChecksum\t4".as_bytes();
-    println!("{:?}", data);
-    let (data, _remaining) = parse(data).unwrap();
-    assert_eq!(data.len(), 2);
-    assert_eq!(data[0].key, "field1");
-    assert_eq!(data[0].value, "value1");
-    assert_eq!(data[1].key, "field2");
-    assert_eq!(data[1].value, "value2");
-}
+#[cfg(test)]
+mod tests_parser {
+    use super::*;
 
-#[test]
-fn test_parse_nonsense() {
-    let data= "\r\n!!!!\t\tvalue1\r\nChecksum\t42".as_bytes();
-    assert!(parse(data).is_err());
-}
-
-#[test]
-fn test_partial_stream() {
-    let mut data = "\r\nH18\t2415\r\nChecksum\t\u{4}\r\nPID\t0xA381\r\nV\t12282\r\nVS\t29\r\nI\t-2288\r\nP\t-28\r\nCE\t-74900\r\nSOC\t916\r\nTTG\t10350\r\nAlarm\tOFF\r\nRelay\tOFF\r\nAR\t0\r\nBMV\t712 Smart\r\nFW\t0403\r\nChecksum\t~\r\nH1\t-76138\r\nH2\t-76138\r\nH3\t0\r\nH4\t0\r\nH5\t0\r\nH6\t-1876218\r\nH7\t12171\r\nH8\t20418\r\nH9\t1199744\r\nH10\t0\r\nH11\t0\r\nH12\t0\r\nH15\t20\r\nH16\t21033\r\nH17\t2404\r\nH18\t2415\r\nChecksum\t\u{3}\r\nPID\t0xA381\r\n".as_bytes();
-    let mut alldata: Vec<Vec<Field>> = vec![];
-    while data.len() > 0 {
-        let res = parse(&data);
-        match res {
-            Ok((parsed, remainder)) => {
-                alldata.push(parsed);
-                data = remainder;
-            },
-            Err(VEError::NeedMoreData) => {break;}
-            Err(e) => {panic!(e);}
-        };
+    #[test]
+    fn test_parse_line() {
+        let data = "\r\nfield1\tvalue1\r\nfield2\tvalue2\r\nChecksum\t4".as_bytes();
+        // println!("{:?}", data);
+        let (data, _remaining) = parse(data).unwrap();
+        assert_eq!(data.len(), 2);
+        assert_eq!(data[0].key, "field1");
+        assert_eq!(data[0].value, "value1");
+        assert_eq!(data[1].key, "field2");
+        assert_eq!(data[1].value, "value2");
     }
 
-    // Got three blocks of data
-    assert_eq!(alldata.len(), 3);
-    // Should have some data remaining
-    assert!(data.len() > 0);
-    assert_eq!(data.len(), 14);
-    assert!(false);
+    #[test]
+    fn test_parse_nonsense() {
+        let data = "\r\n!!!!\t\tvalue1\r\nChecksum\t42".as_bytes();
+        assert!(parse(data).is_err());
+    }
+
+    #[test]
+    fn test_partial_stream() {
+        let mut data = "\r\nH18\t2415\r\nChecksum\t\u{4}\r\nPID\t0xA381\r\nV\t12282\r\nVS\t29\r\nI\t-2288\r\nP\t-28\r\nCE\t-74900\r\nSOC\t916\r\nTTG\t10350\r\nAlarm\tOFF\r\nRelay\tOFF\r\nAR\t0\r\nBMV\t712 Smart\r\nFW\t0403\r\nChecksum\t~\r\nH1\t-76138\r\nH2\t-76138\r\nH3\t0\r\nH4\t0\r\nH5\t0\r\nH6\t-1876218\r\nH7\t12171\r\nH8\t20418\r\nH9\t1199744\r\nH10\t0\r\nH11\t0\r\nH12\t0\r\nH15\t20\r\nH16\t21033\r\nH17\t2404\r\nH18\t2415\r\nChecksum\t\u{3}\r\nPID\t0xA381\r\n".as_bytes();
+        let mut alldata: Vec<Vec<Field>> = vec![];
+        while data.len() > 0 {
+            let res = parse(&data);
+            match res {
+                Ok((parsed, remainder)) => {
+                    alldata.push(parsed);
+                    data = remainder;
+                }
+                Err(VeError::NeedMoreData) => {
+                    break;
+                }
+                Err(e) => {
+                    panic!(e);
+                }
+            };
+        }
+
+        // Got three blocks of data
+        assert_eq!(alldata.len(), 3);
+        // Should have some data remaining
+        assert!(data.len() > 0);
+        assert_eq!(data.len(), 14);
+        assert!(false);
+    }
 }

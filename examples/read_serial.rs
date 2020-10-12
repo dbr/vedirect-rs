@@ -12,10 +12,10 @@ pub fn record(port: &mut dyn SerialPort) -> anyhow::Result<()> {
     port.set_timeout(std::time::Duration::from_secs(2))?;
     let mut buf: [u8; 1024] = [0; 1024];
     loop {
-        let r = port.read(&mut buf)?;
+        let _ = port.read(&mut buf)?;
         let (p, _remainder) = vedirect::parse(&buf)?;
         println!("Got data: {:#?}", &p);
-        let mapped = vedirect::map_fields_Bmv700(&p)?;
+        let mapped = vedirect::map_fields_bmv700(&p)?;
         println!("Mapped data {:#?}", &mapped);
         std::thread::sleep(std::time::Duration::from_millis(100));
     }

@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum VEError {
+pub enum VeError {
     #[error("error parsing data")]
     Parse(String),
 
@@ -16,14 +16,14 @@ pub enum VEError {
 }
 
 // Type conversion errors
-impl From<std::num::ParseIntError> for VEError {
-    fn from(src: std::num::ParseIntError) -> VEError {
-        VEError::Parse(format!("Error parsing integer: {}", src))
+impl From<std::num::ParseIntError> for VeError {
+    fn from(src: std::num::ParseIntError) -> VeError {
+        VeError::Parse(format!("Error parsing integer: {}", src))
     }
 }
 
-impl From<std::num::ParseFloatError> for VEError {
-    fn from(src: std::num::ParseFloatError) -> VEError {
-        VEError::Parse(format!("Error parsing float: {}", src))
+impl From<std::num::ParseFloatError> for VeError {
+    fn from(src: std::num::ParseFloatError) -> VeError {
+        VeError::Parse(format!("Error parsing float: {}", src))
     }
 }

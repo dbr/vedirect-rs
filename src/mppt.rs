@@ -39,7 +39,7 @@ mod tests_mppt {
     #[test]
     fn test_mppt() {
         let sample_frame = "PID\t0xA053\r\nFW\t150\r\nSER#\tHQ1835CBDRQ\r\nV\t12000\r\nI\t0\r\nVPV\t10\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t10206\r\nH20\t0\r\nH21\t0\r\nH22\t2\r\nH23\t8\r\nHSDS\t279\r\nChecksum\t12".as_bytes();
-        let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
+        let (_raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
 
         // let data = map_fields_Bmv700(&raw).unwrap();
         // assert_eq!(data.power, 123);
