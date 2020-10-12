@@ -77,7 +77,6 @@ pub fn parse(data: &[u8]) -> Result<(Vec<Field>, &[u8]), VeError> {
         Ok((remainder, data)) => Ok((data, remainder)),
     }?;
     let (fields, _checksum) = data;
-    // println!("Checksum: {:?}\nFields: {:#?}", checksum, fields);
     Ok((fields, &remainder))
 }
 
@@ -88,7 +87,6 @@ mod tests_parser {
     #[test]
     fn test_parse_line() {
         let data = "\r\nfield1\tvalue1\r\nfield2\tvalue2\r\nChecksum\t4".as_bytes();
-        // println!("{:?}", data);
         let (data, _remaining) = parse(data).unwrap();
         assert_eq!(data.len(), 2);
         assert_eq!(data[0].key, "field1");
@@ -128,6 +126,5 @@ mod tests_parser {
         // Should have some data remaining
         assert!(data.len() > 0);
         assert_eq!(data.len(), 14);
-        assert!(false);
     }
 }

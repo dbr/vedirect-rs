@@ -2,6 +2,7 @@
 
 extern crate serial;
 use serial::SerialPort;
+use vedirect::Map;
 
 pub fn record(port: &mut dyn SerialPort) -> anyhow::Result<()> {
     port.reconfigure(&|settings| {
@@ -15,7 +16,8 @@ pub fn record(port: &mut dyn SerialPort) -> anyhow::Result<()> {
         let _ = port.read(&mut buf)?;
         let (p, _remainder) = vedirect::parse(&buf)?;
         println!("Got data: {:#?}", &p);
-        let mapped = vedirect::map_fields_bmv700(&p)?;
+
+        let mapped = vedirect::Bmv700::map_fields(&p)?;
         println!("Mapped data {:#?}", &mapped);
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
