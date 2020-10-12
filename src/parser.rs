@@ -1,4 +1,4 @@
-use crate::VEError;
+use crate::VEError::VEError;
 
 #[derive(Debug)]
 pub struct Field<'a> {
@@ -82,7 +82,7 @@ pub fn parse(data: &[u8]) -> Result<(Vec<Field>, &[u8]), VEError> {
 fn test_parse_line() {
     let data = "\r\nfield1\tvalue1\r\nfield2\tvalue2\r\nChecksum\t4".as_bytes();
     println!("{:?}", data);
-    let (data, remaining) = parse(data).unwrap();
+    let (data, _remaining) = parse(data).unwrap();
     assert_eq!(data.len(), 2);
     assert_eq!(data[0].key, "field1");
     assert_eq!(data[0].value, "value1");

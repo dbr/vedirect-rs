@@ -1,25 +1,7 @@
 use std::collections::hash_map::HashMap;
 
-use crate::VEError;
-
-// Data types
-type Watt = i32;
-type Percent = f32;
-type Volt = f32;
-type Minute = i32;
-
-// Type conversion errors
-impl From<std::num::ParseIntError> for VEError {
-    fn from(src: std::num::ParseIntError) -> VEError {
-        VEError::Parse(format!("Error parsing integer: {}", src))
-    }
-}
-
-impl From<std::num::ParseFloatError> for VEError {
-    fn from(src: std::num::ParseFloatError) -> VEError {
-        VEError::Parse(format!("Error parsing float: {}", src))
-    }
-}
+use crate::VEError::VEError;
+use crate::types::*;
 
 /// Data for BMV 600 battery monitor series
 // struct Bmv600 {}
@@ -51,9 +33,6 @@ pub struct Bmv700 {
     /// Available on: BMV 600, BMV 700
     pub ttg: Minute,
 }
-
-/// Data for all MPPT solar charge controller
-// struct MPPT {}
 
 /// Data for Phoenix Inverters
 // struct PhoenixInverter {}
@@ -100,7 +79,7 @@ fn convert_ttg(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Minute, VEE
 
 
 /// Take a list of fields and creates an easier to use structure
-pub fn map_fields(fields: &Vec<crate::parser::Field>) -> Result<Bmv700, VEError> {
+pub fn map_fields_Bmv700(fields: &Vec<crate::parser::Field>) -> Result<Bmv700, VEError> {
     // Convert from list into map
     let mut hm: HashMap<&str, &str> = HashMap::new();
     for f in fields {
@@ -118,11 +97,11 @@ pub fn map_fields(fields: &Vec<crate::parser::Field>) -> Result<Bmv700, VEError>
 
 #[test]
 fn test_mapping() {
-    let (raw, remainder) = crate::parser::parse(
+    let (raw, _remainder) = crate::parser::parse(
         "\r\nP\t123\r\nCE\t53\r\nSOC\t452\r\nTTG\t60\r\nRelay\tOFF\r\nAlarm\tOFF\r\nV\t232\r\nChecksum\t12".as_bytes(),
     )
     .unwrap();
-    let data = map_fields(&raw).unwrap();
+    let data = map_fields_Bmv700(&raw).unwrap();
     assert_eq!(data.power, 123);
     assert_eq!(data.consumed, Some("53".into()));
     assert_eq!(data.soc, Some(45.2));
