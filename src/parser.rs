@@ -15,28 +15,28 @@ pub struct Checksum {
 fn rawparse(data: &[u8]) -> nom::IResult<&[u8], (Vec<Field>, Checksum)> {
     use nom::bytes::streaming::tag;
     use nom::bytes::streaming::take_until;
-    use nom::character::streaming::alphanumeric1;
     use nom::character::streaming::anychar;
     use nom::character::streaming::char;
     use nom::combinator::map;
     use nom::combinator::not;
+
     use nom::multi::many1;
     use nom::sequence::pair;
     use nom::sequence::preceded;
     use nom::sequence::separated_pair;
     use nom::IResult;
 
-    /// Label which is not "Checksum"
+    // Label which is not "Checksum"
     fn field_label(input: &[u8]) -> IResult<&[u8], &str> {
         map(
-            preceded(not(tag("Checksum")), alphanumeric1),
+            preceded(not(tag("Checksum")), take_until("\t")),
             |s: &[u8]| std::str::from_utf8(s).expect("label"),
         )(input)
     }
     fn line(input: &[u8]) -> IResult<&[u8], Field> {
         // Each field starts with newline, then <field-label> <tab> <field-value>
         let parsed = pair(
-            // Newline
+            // Newline∏
             tag("\r\n"),
             // Field, tab, value
             separated_pair(field_label, char('\t'), take_until("\r\n")),
@@ -93,6 +93,15 @@ mod tests_parser {
         assert_eq!(data[0].value, "value1");
         assert_eq!(data[1].key, "field2");
         assert_eq!(data[1].value, "value2");
+    }
+
+    #[test]
+    fn test_parse_serial() {
+        let data = "\r\nSER#\tABC123\r\nChecksum\t4".as_bytes();
+        let (data, _remaining) = parse(data).unwrap();
+        assert_eq!(data.len(), 1);
+        assert_eq!(data[0].key, "SER#");
+        assert_eq!(data[0].value, "ABC123");
     }
 
     #[test]
