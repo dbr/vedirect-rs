@@ -27,3 +27,9 @@ impl From<std::num::ParseFloatError> for VeError {
         VeError::Parse(format!("Error parsing float: {}", src))
     }
 }
+
+impl From<std::str::ParseBoolError> for VeError {
+    fn from(src: std::str::ParseBoolError) -> VeError {
+        VeError::Parse(format!("Error parsing bool: {}", src))
+    }
+}

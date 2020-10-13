@@ -25,6 +25,22 @@ pub fn convert_volt(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Volt, 
     Ok(cleaned)
 }
 
+pub fn convert_bool(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<bool, VeError> {
+    let raw = (*rawkeys)
+        .get(label)
+        .ok_or(VeError::MissingField(label.into()))?;
+    let cleaned = String::from(*raw).contains("ON");
+    Ok(cleaned)
+}
+
+pub fn convert_number(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<u32, VeError> {
+    let raw = (*rawkeys)
+        .get(label)
+        .ok_or(VeError::MissingField(label.into()))?;
+    let cleaned = raw.parse::<u32>()?;
+    Ok(cleaned)
+}
+
 pub fn convert_watt(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Watt, VeError> {
     let raw = (*rawkeys)
         .get(label)
