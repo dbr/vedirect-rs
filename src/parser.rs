@@ -105,6 +105,7 @@ mod tests_parser {
     }
 
     #[test]
+    #[ignore = "Since Victron decided to throw which chars as field names (ie SER#), we need to revise the non-sense unforntunately"]
     fn test_parse_nonsense() {
         let data = "\r\n!!!!\t\tvalue1\r\nChecksum\t42".as_bytes();
         assert!(parse(data).is_err());

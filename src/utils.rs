@@ -5,13 +5,21 @@ use crate::constants::*;
 use num_traits::FromPrimitive;
 
 // TODO: Lots of duplicate code here, we probably can do better. See function below.
-// pub fn convert_value<T: FromStr>(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<T, VeError> {
+// pub fn convert_number<T: FromStr + Debug>(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<T, VeError> {
 //     let raw = (*rawkeys)
 //         .get(label)
 //         .ok_or(VeError::MissingField(label.into()))?;
 //     let cleaned = raw.parse::<T>()?;
 //     Ok(cleaned)
 // }
+
+pub fn convert_u32(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<u32, VeError> {
+    let raw = (*rawkeys)
+        .get(label)
+        .ok_or(VeError::MissingField(label.into()))?;
+    let cleaned = raw.parse::<u32>()?;
+    Ok(cleaned)
+}
 
 pub fn convert_percentage(
     rawkeys: &HashMap<&str, &str>,
@@ -44,13 +52,7 @@ pub fn convert_bool(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<bool, 
     Ok(cleaned)
 }
 
-// pub fn convert_number(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<u32, VeError> {
-//     let raw = (*rawkeys)
-//         .get(label)
-//         .ok_or(VeError::MissingField(label.into()))?;
-//     let cleaned = raw.parse::<u32>()?;
-//     Ok(cleaned)
-// }
+
 
 pub fn convert_err(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Err, VeError> {
     let raw = (*rawkeys)

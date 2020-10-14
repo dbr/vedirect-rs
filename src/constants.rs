@@ -3,7 +3,7 @@ use std::fmt::Display;
 use num_derive::FromPrimitive;    
 // use num_traits::FromPrimitive;
 
-#[derive(Debug, FromPrimitive, Copy, Clone)]
+#[derive(Debug, FromPrimitive, Copy, Clone, PartialEq)]
 pub enum AlarmReason {
     LowVoltage=1,
     HighVoltage=2,
@@ -20,7 +20,7 @@ pub enum AlarmReason {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, FromPrimitive, Copy, Clone)]
+#[derive(Debug, FromPrimitive, Copy, Clone, PartialEq)]
 pub enum VictronProducts {
     BMV700=0x203,
     BMV702=0x204,
@@ -58,14 +58,14 @@ pub enum VictronProducts {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, FromPrimitive, Copy, Clone)]
+#[derive(Debug, FromPrimitive, Copy, Clone, PartialEq)]
 pub enum DeviceMode {
     VE_REG_MODE_INVERTER=2,
     VE_REG_MODE_OFF=4,
     VE_REG_MODE_ECO=5,
 }
 
-#[derive(Debug, FromPrimitive, Copy, Clone)]
+#[derive(Debug, FromPrimitive, Copy, Clone, PartialEq)]
 pub enum ChargeState {
     Off=0,
     LowPower=1,
@@ -82,7 +82,7 @@ impl Display for ChargeState {
     }
 }
 
-#[derive(Debug, FromPrimitive, Copy, Clone)]
+#[derive(Debug, FromPrimitive, Copy, Clone, PartialEq)]
 pub enum Err {
     NoError=0,
     BatteryVoltageTooHigh=2,

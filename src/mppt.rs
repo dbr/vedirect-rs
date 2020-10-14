@@ -91,18 +91,19 @@ pub struct Mppt75_15 {
     /// Label: H23, Maximum power today
     pub max_power_yesterday: Watt,
 
-    // Label: HSDS
-    // Historical data. The day sequence number, a change in this number indicates a new day. This
-    // implies that the historical data has changed. Range 0..364.
-    // Note: The HSDS field is available in the MPPT charger since version v1.16.
-    // pub hsds
+    /// Label: HSDS
+    /// Historical data. The day sequence number, a change in this number indicates a new day. This
+    /// implies that the historical data has changed. Range 0..364.
+    /// Note: The HSDS field is available in the MPPT charger since version v1.16.
+    pub hsds: u16,
 
-    // label: Checksum
+    /// label: Checksum, the checksum
+    pub checksum: u8,
 }
 
 impl ToString for Mppt75_15 {
     fn to_string(&self) -> String {
-        format!("\r\nPID\t{}\r\nFW\t{}\r\nSER#\t{}\r\nV\t{}\r\nI\t{}\r\nVPV\t{}\r\nPPV\t{}\r\nCS\t{}\r\nMPPT\t{}\r\nOR\t{}\r\nERR\t{}\r\nLOAD\t{}\r\nIL\t{}\r\nH19\t{}\r\nH20\t{}\r\nH21\t{}\r\nH22\t{}\r\nH23\t{}\r\nChecksum\t{}", 
+        format!("\r\nPID\t{}\r\nFW\t{}\r\nSER#\t{}\r\nV\t{}\r\nI\t{}\r\nVPV\t{}\r\nPPV\t{}\r\nCS\t{}\r\nMPPT\t{}\r\nOR\t{}\r\nERR\t{}\r\nLOAD\t{}\r\nIL\t{}\r\nH19\t{}\r\nH20\t{}\r\nH21\t{}\r\nH22\t{}\r\nH23\t{}\r\nHSDS\t{}\r\nChecksum\t{}", 
         self.pid, 
         self.firmware,
         self.serial_number,
@@ -121,7 +122,9 @@ impl ToString for Mppt75_15 {
         self.max_power_today,
         self.yield_yesterday,
         self.max_power_yesterday,
-        42) // TODO: fix that
+        self.hsds,
+        self.checksum,
+        ) 
     }
 }
 
@@ -148,6 +151,9 @@ impl Default for Mppt75_15 {
 
             error: Err::NoError,
             load: false,
+
+            hsds: 0,
+            checksum: 0,
         }
     }
 }
@@ -178,6 +184,8 @@ impl Map<Mppt75_15> for Mppt75_15 {
             max_power_today: convert_watt(&hm, "H21")?,
             yield_yesterday: convert_yield(&hm, "H22")?,
             max_power_yesterday: convert_watt(&hm, "H23")?,
+            hsds: convert_u32(&hm, "HSDS")? as u16,
+            checksum: convert_u32(&hm, "HSDS")? as u8,
         })
     }
 }
@@ -187,27 +195,73 @@ mod tests_mppt {
     use super::*;
 
     #[test]
+    fn test_mppt_to_string() {
+        let mppt = Mppt75_15::default();
+        let frame = mppt.to_string();
+        let default_frame = "\r\nPID\t0x0000\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0";
+        assert_eq!(frame, default_frame);
+    }
+
+    #[test]
     fn test_mppt_1() {
         let mppt = Mppt75_15::default();
         let frame = mppt.to_string();
         let sample_frame = frame.as_bytes();
-
         let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
-
         let data = Mppt75_15::map_fields(&raw).unwrap();
+
         assert_eq!(data.pid, String::from("0x0000"));
+        assert_eq!(data.firmware, String::from("150"));
+        assert_eq!(data.serial_number, "HQ1328Y6TF6");
         assert_eq!(data.voltage, 0.0);
         assert_eq!(data.current, 0.0);
-        assert_eq!(data.load, false);
         assert_eq!(data.load_current, 0.0);
-        assert_eq!(data.serial_number, "HQ1328Y6TF6");
+        assert_eq!(data.vpv, 0.0);
+        assert_eq!(data.ppv, 0);
+        assert_eq!(data.charge_state, ChargeState::Off);
+        assert_eq!(data.mppt, "0");
+        assert_eq!(data.or, "0x00000001");
+        assert_eq!(data.error, Err::NoError);
+        assert_eq!(data.load, false);
+        assert_eq!(data.yield_total, 0);
+        assert_eq!(data.yield_today, 0);
+        assert_eq!(data.max_power_today, 0);
+        assert_eq!(data.yield_yesterday, 0);
+        assert_eq!(data.max_power_yesterday, 0);
+        assert_eq!(data.hsds, 0);
+        assert_eq!(data.checksum, 0);
     }
 
     #[test]
-    fn test_mppt_to_string() {
+    fn test_mppt_older_versions() {
         let mppt = Mppt75_15::default();
         let frame = mppt.to_string();
-        let default_frame = "\r\nPID\t0x0000\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nChecksum\t42";
-        assert_eq!(frame, default_frame);
+        let sample_frame = frame.as_bytes();
+        let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
+        let data = Mppt75_15::map_fields(&raw).unwrap();
+
+        let default_frame = "\r\nPID\t0x0000\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0";
+
+        
+        assert_eq!(data.pid, String::from("0x0000"));
+        assert_eq!(data.firmware, String::from("150"));
+        assert_eq!(data.serial_number, "HQ1328Y6TF6");
+        assert_eq!(data.voltage, 0.0);
+        assert_eq!(data.current, 0.0);
+        assert_eq!(data.load_current, 0.0);
+        assert_eq!(data.vpv, 0.0);
+        assert_eq!(data.ppv, 0);
+        assert_eq!(data.charge_state, ChargeState::Off);
+        assert_eq!(data.mppt, "0");
+        assert_eq!(data.or, "0x00000001");
+        assert_eq!(data.error, Err::NoError);
+        assert_eq!(data.load, false);
+        assert_eq!(data.yield_total, 0);
+        assert_eq!(data.yield_today, 0);
+        assert_eq!(data.max_power_today, 0);
+        assert_eq!(data.yield_yesterday, 0);
+        assert_eq!(data.max_power_yesterday, 0);
+        assert_eq!(data.hsds, 0);
+        assert_eq!(data.checksum, 0);
     }
 }
