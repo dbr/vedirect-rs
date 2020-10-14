@@ -144,16 +144,17 @@ mod tests_mppt {
     fn test_mppt_1() {
         // let sample_frame = "\r\nPID\t0xA053\r\nFW\t150\r\nSER#\tHQ9999ABCDE\r\nV\t12000\r\nI\t0\r\nVPV\t10\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t10206\r\nH20\t0\r\nH21\t0\r\nH22\t2\r\nH23\t8\r\nHSDS\t279\r\nChecksum\t12".as_bytes();
         // let sample_frame = "\r\nPID\t0xA053\r\nFW\t150\r\nV\t12000\r\nI\t0\r\nVPV\t10\r\nPPV\t0\r\nERR\t0\r\nLOAD\tOFF\r\nChecksum\t12".as_bytes();
-        let sample_frame = "\r\nPID\t0xA053\r\nFW\t150\r\nSER#\tHQ9999ABCDE\r\nV\t12530\r\nI\t01230\r\nVPV\t10\r\nPPV\t0\r\nERR\t0\r\nLOAD\tOFF\r\nChecksum\t42".as_bytes();
+        let sample_frame = "\r\nPID\t0xA053\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t12340\r\nI\t01230\r\nVPV\t10\r\nPPV\t0\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nChecksum\t42".as_bytes();
 
         // let sample_frame = "\r\nPID\t0xA053\r\nV\t12000\r\nLOAD\tOFF\r\nChecksum\t12".as_bytes();
         let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
 
         let data = Mppt75_15::map_fields(&raw).unwrap();
         assert_eq!(data.pid, String::from("0xA053"));
-        assert_eq!(data.voltage, 0.0);
-        assert_eq!(data.current, 0.0);
+        assert_eq!(data.voltage, 12.34);
+        assert_eq!(data.current, 1.23);
         assert_eq!(data.load, false);
+        assert_eq!(data.load_current, 0.0);
         assert_eq!(data.serial_number, "HQ1328Y6TF6");
     }
 
