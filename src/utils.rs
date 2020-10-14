@@ -1,10 +1,17 @@
 use crate::types::*;
 use crate::ve_error::VeError;
-use std::collections::hash_map::HashMap;
+use std::{collections::hash_map::HashMap};
 use crate::constants::*;
 use num_traits::FromPrimitive;
 
-// TODO: Lots of duplicate code here, we probably can do better
+// TODO: Lots of duplicate code here, we probably can do better. See function below.
+// pub fn convert_value<T: FromStr>(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<T, VeError> {
+//     let raw = (*rawkeys)
+//         .get(label)
+//         .ok_or(VeError::MissingField(label.into()))?;
+//     let cleaned = raw.parse::<T>()?;
+//     Ok(cleaned)
+// }
 
 pub fn convert_percentage(
     rawkeys: &HashMap<&str, &str>,
@@ -76,6 +83,14 @@ pub fn convert_watt(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Watt, 
         .get(label)
         .ok_or(VeError::MissingField(label.into()))?;
     let cleaned = raw.parse::<Watt>()?;
+    Ok(cleaned)
+}
+
+pub fn convert_yield(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<kWh, VeError> {
+    let raw = (*rawkeys)
+        .get(label)
+        .ok_or(VeError::MissingField(label.into()))?;
+    let cleaned = raw.parse::<kWh>()?;
     Ok(cleaned)
 }
 

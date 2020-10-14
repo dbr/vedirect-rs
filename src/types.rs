@@ -1,5 +1,12 @@
 // Data types
-pub type Watt = i32;
+
+// TODO: are those i32 correct? Do we really get negative values ?
+
+pub type Watt = i32; 
+
+#[allow(non_camel_case_types)]
+pub type kWh = i32;
+
 pub type Percent = f32;
 pub type Volt = f32;
 pub type Current = f32;
