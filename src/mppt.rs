@@ -57,10 +57,12 @@ pub struct Mppt75_15 {
     /// Label: CS, State of Operation
     pub charge_state: ChargeState,
 
-    // Label: MPPT
-    
+    // TODO: check what MPPT is
+    /// Label: MPPT, Unsure what this is so catching it as String for now
+    pub mppt: String,
+
     // TODO: check what OR is
-    // Label: OR, Unsure what this is so catching it as String for now
+    /// Label: OR, Unsure what this is so catching it as String for now
     pub or: String,
 
     /// Error code    
@@ -88,7 +90,7 @@ pub struct Mppt75_15 {
 
 impl ToString for Mppt75_15 {
     fn to_string(&self) -> String {
-        format!("\r\nPID\t{}\r\nFW\t{}\r\nSER#\t{}\r\nV\t{}\r\nI\t{}\r\nVPV\t{}\r\nPPV\t{}\r\nCS\t{}\r\nOR\t{}\r\nERR\t{}\r\nLOAD\t{}\r\nChecksum\t{}", 
+        format!("\r\nPID\t{}\r\nFW\t{}\r\nSER#\t{}\r\nV\t{}\r\nI\t{}\r\nVPV\t{}\r\nPPV\t{}\r\nCS\t{}\r\nMPPT\t{}\r\nOR\t{}\r\nERR\t{}\r\nLOAD\t{}\r\nIL\t{}\r\nChecksum\t{}", 
         self.pid, 
         self.firmware,
         self.serial_number,
@@ -97,9 +99,11 @@ impl ToString for Mppt75_15 {
         self.vpv,
         self.ppv,
         self.charge_state as u32,
+        self.mppt,
         self.or,
         self.error as u32,
-        if self.load { "ON" } else { "OFF" } , 
+        if self.load { "ON" } else { "OFF" },
+        self.load_current,
         42) // TODO: fix that
     }
 }
@@ -115,6 +119,7 @@ impl Default for Mppt75_15 {
             vpv: 0.0,
             ppv: 0,
             charge_state: ChargeState::Off,
+            mppt: "0".into(),
             or: "0x00000001".into(),
             load_current: 0.0,
             error: Err::NoError,
@@ -140,6 +145,7 @@ impl Map<Mppt75_15> for Mppt75_15 {
             vpv: convert_volt(&hm, "VPV")? / 100f32,
             ppv: convert_watt(&hm, "PPV")?,
             charge_state: convert_charge_state(&hm, "CS")?,
+            mppt: convert_string(&hm, "MPPT")?,
             or: convert_string(&hm, "OR")?,
             error: convert_err(&hm, "ERR")?,
             load: convert_bool(&hm, "LOAD")?,
@@ -153,17 +159,16 @@ mod tests_mppt {
 
     #[test]
     fn test_mppt_1() {
-        // let sample_frame = "\r\nPID\t0xA053\r\nFW\t150\r\nSER#\tHQ9999ABCDE\r\nV\t12000\r\nI\t0\r\nVPV\t10\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t10206\r\nH20\t0\r\nH21\t0\r\nH22\t2\r\nH23\t8\r\nHSDS\t279\r\nChecksum\t12".as_bytes();
-        // let sample_frame = "\r\nPID\t0xA053\r\nFW\t150\r\nV\t12000\r\nI\t0\r\nVPV\t10\r\nPPV\t0\r\nERR\t0\r\nLOAD\tOFF\r\nChecksum\t12".as_bytes();
-        let sample_frame = "\r\nPID\t0xA053\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t12340\r\nI\t01230\r\nVPV\t10\r\nPPV\t0\r\nCS\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nChecksum\t42".as_bytes();
+        let mppt = Mppt75_15::default();
+        let frame = mppt.to_string();
+        let sample_frame = frame.as_bytes();
 
-        // let sample_frame = "\r\nPID\t0xA053\r\nV\t12000\r\nLOAD\tOFF\r\nChecksum\t12".as_bytes();
         let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
 
         let data = Mppt75_15::map_fields(&raw).unwrap();
-        assert_eq!(data.pid, String::from("0xA053"));
-        assert_eq!(data.voltage, 12.34);
-        assert_eq!(data.current, 1.23);
+        assert_eq!(data.pid, String::from("0x0000"));
+        assert_eq!(data.voltage, 0.0);
+        assert_eq!(data.current, 0.0);
         assert_eq!(data.load, false);
         assert_eq!(data.load_current, 0.0);
         assert_eq!(data.serial_number, "HQ1328Y6TF6");
@@ -175,7 +180,7 @@ mod tests_mppt {
 
         let frame = mppt.to_string();
         // println!("{}", frame);
-        let default_frame = "\r\nPID\t0x0000\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nChecksum\t42";
+        let default_frame = "\r\nPID\t0x0000\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nChecksum\t42";
         assert_eq!(frame, default_frame);
     }
 }
