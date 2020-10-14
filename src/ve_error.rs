@@ -12,7 +12,7 @@ pub enum VeError {
     ChecksumError,
 
     #[error("missing field from recieved data")]
-    MissingField(String),
+    MissingField(String), 
 }
 
 // Type conversion errors

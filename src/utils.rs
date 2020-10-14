@@ -1,6 +1,9 @@
 use crate::types::*;
 use crate::ve_error::VeError;
 use std::collections::hash_map::HashMap;
+use crate::constants::*;
+// use num_derive::FromPrimitive;    
+use num_traits::FromPrimitive;
 
 pub fn convert_percentage(
     rawkeys: &HashMap<&str, &str>,
@@ -33,12 +36,26 @@ pub fn convert_bool(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<bool, 
     Ok(cleaned)
 }
 
-pub fn convert_number(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<u32, VeError> {
+// pub fn convert_number(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<u32, VeError> {
+//     let raw = (*rawkeys)
+//         .get(label)
+//         .ok_or(VeError::MissingField(label.into()))?;
+//     let cleaned = raw.parse::<u32>()?;
+//     Ok(cleaned)
+// }
+
+pub fn convert_err(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Err, VeError> {
     let raw = (*rawkeys)
         .get(label)
         .ok_or(VeError::MissingField(label.into()))?;
-    let cleaned = raw.parse::<u32>()?;
-    Ok(cleaned)
+    let cleaned = raw.parse::<i32>()?;
+    let error =  FromPrimitive::from_i32(cleaned);
+    
+    match error {
+        Some(x) => Ok(x),
+        None => Err(VeError::Parse(format!("Error parsing integer into Err: {}", raw))),
+    }
+    // Ok(cleaned.into())
 }
 
 pub fn convert_watt(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Watt, VeError> {
