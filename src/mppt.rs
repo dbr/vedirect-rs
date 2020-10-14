@@ -30,10 +30,10 @@ use crate::constants::*;
 /// Data for all MPPT solar charge controller
 #[derive(Debug)]
 pub struct Mppt75_15 {
-    /// Product ID
+    /// Label: PID, Product ID
     pub pid: String,
 
-    /// Firmware version
+    /// Label: FW, Firmware version
     pub firmware: String, // TODO: check if that could be a semver
 
     /// Label: SER#, Serial Number
@@ -55,13 +55,16 @@ pub struct Mppt75_15 {
     pub ppv: Watt,
 
     /// Label: CS, State of Operation
-    // pub state: String ?
+    pub charge_state: ChargeState,
 
     // Label: MPPT
+    
     // or
+    
+    /// Error code    
     pub error: Err,
 
-
+    /// Whether the load is turned ON(true) or OFF(false)
     pub load: bool,
     
     // Label: IL, Unit: mA, Load current, converted to A
@@ -83,7 +86,7 @@ pub struct Mppt75_15 {
 
 impl ToString for Mppt75_15 {
     fn to_string(&self) -> String {
-        format!("\r\nPID\t{}\r\nFW\t{}\r\nSER#\t{}\r\nV\t{}\r\nI\t{}\r\nVPV\t{}\r\nPPV\t{}\r\nERR\t{}\r\nLOAD\t{}\r\nChecksum\t{}", 
+        format!("\r\nPID\t{}\r\nFW\t{}\r\nSER#\t{}\r\nV\t{}\r\nI\t{}\r\nVPV\t{}\r\nPPV\t{}\r\nCS\t{}\r\nERR\t{}\r\nLOAD\t{}\r\nChecksum\t{}", 
         self.pid, 
         self.firmware,
         self.serial_number,
@@ -91,6 +94,7 @@ impl ToString for Mppt75_15 {
         self.current,
         self.vpv,
         self.ppv,
+        self.charge_state as u32,
         self.error as u32,
         if self.load { "ON" } else { "OFF" } , 
         42) // TODO: fix that
@@ -107,6 +111,7 @@ impl Default for Mppt75_15 {
             current: 0.0,
             vpv: 0.0,
             ppv: 0,
+            charge_state: ChargeState::Off,
             load_current: 0.0,
             error: Err::NoError,
             load: false,
@@ -130,6 +135,7 @@ impl Map<Mppt75_15> for Mppt75_15 {
             load_current : convert_volt(&hm, "IL")?, // TODO: fix that
             vpv: convert_volt(&hm, "VPV")? / 100f32,
             ppv: convert_watt(&hm, "PPV")?,
+            charge_state: convert_charge_state(&hm, "CS")?,
             error: convert_err(&hm, "ERR")?,
             load: convert_bool(&hm, "LOAD")?,
         })
@@ -144,7 +150,7 @@ mod tests_mppt {
     fn test_mppt_1() {
         // let sample_frame = "\r\nPID\t0xA053\r\nFW\t150\r\nSER#\tHQ9999ABCDE\r\nV\t12000\r\nI\t0\r\nVPV\t10\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t10206\r\nH20\t0\r\nH21\t0\r\nH22\t2\r\nH23\t8\r\nHSDS\t279\r\nChecksum\t12".as_bytes();
         // let sample_frame = "\r\nPID\t0xA053\r\nFW\t150\r\nV\t12000\r\nI\t0\r\nVPV\t10\r\nPPV\t0\r\nERR\t0\r\nLOAD\tOFF\r\nChecksum\t12".as_bytes();
-        let sample_frame = "\r\nPID\t0xA053\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t12340\r\nI\t01230\r\nVPV\t10\r\nPPV\t0\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nChecksum\t42".as_bytes();
+        let sample_frame = "\r\nPID\t0xA053\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t12340\r\nI\t01230\r\nVPV\t10\r\nPPV\t0\r\nCS\t0\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nChecksum\t42".as_bytes();
 
         // let sample_frame = "\r\nPID\t0xA053\r\nV\t12000\r\nLOAD\tOFF\r\nChecksum\t12".as_bytes();
         let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
@@ -164,7 +170,7 @@ mod tests_mppt {
 
         let frame = mppt.to_string();
         // println!("{}", frame);
-        let default_frame = "\r\nPID\t0x0000\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nERR\t0\r\nLOAD\tOFF\r\nChecksum\t42";
+        let default_frame = "\r\nPID\t0x0000\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nERR\t0\r\nLOAD\tOFF\r\nChecksum\t42";
         assert_eq!(frame, default_frame);
     }
 }

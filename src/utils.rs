@@ -2,8 +2,9 @@ use crate::types::*;
 use crate::ve_error::VeError;
 use std::collections::hash_map::HashMap;
 use crate::constants::*;
-// use num_derive::FromPrimitive;    
 use num_traits::FromPrimitive;
+
+// TODO: Lots of duplicate code here, we probably can do better
 
 pub fn convert_percentage(
     rawkeys: &HashMap<&str, &str>,
@@ -55,7 +56,19 @@ pub fn convert_err(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Err, Ve
         Some(x) => Ok(x),
         None => Err(VeError::Parse(format!("Error parsing integer into Err: {}", raw))),
     }
-    // Ok(cleaned.into())
+}
+
+pub fn convert_charge_state(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<ChargeState, VeError> {
+    let raw = (*rawkeys)
+        .get(label)
+        .ok_or(VeError::MissingField(label.into()))?;
+    let cleaned = raw.parse::<i32>()?;
+    let cs =  FromPrimitive::from_i32(cleaned);
+    
+    match cs {
+        Some(x) => Ok(x),
+        None => Err(VeError::Parse(format!("Error parsing integer into ChargeState: {}", raw))),
+    }
 }
 
 pub fn convert_watt(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Watt, VeError> {

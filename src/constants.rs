@@ -3,6 +3,7 @@ use std::fmt::Display;
 use num_derive::FromPrimitive;    
 // use num_traits::FromPrimitive;
 
+#[derive(Debug, FromPrimitive, Copy, Clone)]
 pub enum AlarmReason {
     LowVoltage=1,
     HighVoltage=2,
@@ -18,8 +19,8 @@ pub enum AlarmReason {
     HighVACout=2048,
 }
 
-#[derive(Debug)]
 #[allow(non_camel_case_types)]
+#[derive(Debug, FromPrimitive, Copy, Clone)]
 pub enum VictronProducts {
     BMV700=0x203,
     BMV702=0x204,
@@ -56,15 +57,15 @@ pub enum VictronProducts {
     Phoenix_Inverter_48V_500VA_230V =0xA224,
 }
 
-#[derive(Debug)]
 #[allow(non_camel_case_types)]
+#[derive(Debug, FromPrimitive, Copy, Clone)]
 pub enum DeviceMode {
     VE_REG_MODE_INVERTER=2,
     VE_REG_MODE_OFF=4,
     VE_REG_MODE_ECO=5,
 }
 
-#[derive(Debug)]
+#[derive(Debug, FromPrimitive, Copy, Clone)]
 pub enum ChargeState {
     Off=0,
     LowPower=1,
@@ -73,6 +74,12 @@ pub enum ChargeState {
     Absorption=4, 
     Float=5, 
     Inverting=9,
+}
+
+impl Display for ChargeState {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(Debug, FromPrimitive, Copy, Clone)]
