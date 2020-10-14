@@ -59,8 +59,10 @@ pub struct Mppt75_15 {
 
     // Label: MPPT
     
-    // or
-    
+    // TODO: check what OR is
+    // Label: OR, Unsure what this is so catching it as String for now
+    pub or: String,
+
     /// Error code    
     pub error: Err,
 
@@ -86,7 +88,7 @@ pub struct Mppt75_15 {
 
 impl ToString for Mppt75_15 {
     fn to_string(&self) -> String {
-        format!("\r\nPID\t{}\r\nFW\t{}\r\nSER#\t{}\r\nV\t{}\r\nI\t{}\r\nVPV\t{}\r\nPPV\t{}\r\nCS\t{}\r\nERR\t{}\r\nLOAD\t{}\r\nChecksum\t{}", 
+        format!("\r\nPID\t{}\r\nFW\t{}\r\nSER#\t{}\r\nV\t{}\r\nI\t{}\r\nVPV\t{}\r\nPPV\t{}\r\nCS\t{}\r\nOR\t{}\r\nERR\t{}\r\nLOAD\t{}\r\nChecksum\t{}", 
         self.pid, 
         self.firmware,
         self.serial_number,
@@ -95,6 +97,7 @@ impl ToString for Mppt75_15 {
         self.vpv,
         self.ppv,
         self.charge_state as u32,
+        self.or,
         self.error as u32,
         if self.load { "ON" } else { "OFF" } , 
         42) // TODO: fix that
@@ -112,6 +115,7 @@ impl Default for Mppt75_15 {
             vpv: 0.0,
             ppv: 0,
             charge_state: ChargeState::Off,
+            or: "0x00000001".into(),
             load_current: 0.0,
             error: Err::NoError,
             load: false,
@@ -136,6 +140,7 @@ impl Map<Mppt75_15> for Mppt75_15 {
             vpv: convert_volt(&hm, "VPV")? / 100f32,
             ppv: convert_watt(&hm, "PPV")?,
             charge_state: convert_charge_state(&hm, "CS")?,
+            or: convert_string(&hm, "OR")?,
             error: convert_err(&hm, "ERR")?,
             load: convert_bool(&hm, "LOAD")?,
         })
@@ -150,7 +155,7 @@ mod tests_mppt {
     fn test_mppt_1() {
         // let sample_frame = "\r\nPID\t0xA053\r\nFW\t150\r\nSER#\tHQ9999ABCDE\r\nV\t12000\r\nI\t0\r\nVPV\t10\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t10206\r\nH20\t0\r\nH21\t0\r\nH22\t2\r\nH23\t8\r\nHSDS\t279\r\nChecksum\t12".as_bytes();
         // let sample_frame = "\r\nPID\t0xA053\r\nFW\t150\r\nV\t12000\r\nI\t0\r\nVPV\t10\r\nPPV\t0\r\nERR\t0\r\nLOAD\tOFF\r\nChecksum\t12".as_bytes();
-        let sample_frame = "\r\nPID\t0xA053\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t12340\r\nI\t01230\r\nVPV\t10\r\nPPV\t0\r\nCS\t0\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nChecksum\t42".as_bytes();
+        let sample_frame = "\r\nPID\t0xA053\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t12340\r\nI\t01230\r\nVPV\t10\r\nPPV\t0\r\nCS\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nChecksum\t42".as_bytes();
 
         // let sample_frame = "\r\nPID\t0xA053\r\nV\t12000\r\nLOAD\tOFF\r\nChecksum\t12".as_bytes();
         let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
@@ -170,7 +175,7 @@ mod tests_mppt {
 
         let frame = mppt.to_string();
         // println!("{}", frame);
-        let default_frame = "\r\nPID\t0x0000\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nERR\t0\r\nLOAD\tOFF\r\nChecksum\t42";
+        let default_frame = "\r\nPID\t0x0000\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nChecksum\t42";
         assert_eq!(frame, default_frame);
     }
 }
