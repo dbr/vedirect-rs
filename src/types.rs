@@ -2,7 +2,7 @@
 
 // TODO: are those i32 correct? Do we really get negative values ?
 
-pub type Watt = i32; 
+pub type Watt = i32;
 
 #[allow(non_camel_case_types)]
 pub type kWh = i32;

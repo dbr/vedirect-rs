@@ -12,14 +12,14 @@ pub enum VeError {
     ChecksumError,
 
     #[error("missing field from recieved data")]
-    MissingField(String), 
+    MissingField(String),
 }
 
 // impl<T: FromStr + Debug> From<T> for VeError {
 //     fn from(src: T) -> VeError {
 //         VeError::Parse(format!("Error parsing value: {:?}", src))
 //     }
-// } 
+// }
 
 // Type conversion errors
 impl From<std::num::ParseIntError> for VeError {

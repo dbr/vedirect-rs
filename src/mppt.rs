@@ -1,10 +1,10 @@
+use crate::constants::*;
 use crate::map::Map;
 use crate::parser::Field;
 use crate::types::*;
 use crate::utils::*;
 use crate::ve_error::VeError;
 use std::collections::hash_map::HashMap;
-use crate::constants::*;
 
 // PID     0xA053
 // FW      150
@@ -41,15 +41,15 @@ pub struct Mppt75_15 {
     /// YYWW=production datestamp (year, week) and SSSSS=unique part of the serial number.
     /// Example: HQ1328Y6TF6
     pub serial_number: String,
-    
+
     /// Label: V, Unit: mV, Main (battery) voltage
     pub voltage: Volt,
-    
+
     /// Label: I, Unit: mA, Battery current converted to A
     pub current: Current,
-    
+
     /// Label: VPV, Unit: mV, Panel voltage, converted to V.
-    pub vpv: Volt, 
+    pub vpv: Volt,
 
     /// Label: PPV, Unit: W, Panel Power
     pub ppv: Watt,
@@ -71,7 +71,7 @@ pub struct Mppt75_15 {
     // TODO: only available for models with load output and since Firmware v1.12 so we should probably make that an Option<bool> or manage versionning
     /// Label: LOAD, Whether the load is turned ON(true) or OFF(false)
     pub load: bool,
-    
+
     // TODO: only available for models with load output and since Firmware v1.15 so we should probably make that an Option<bool> or manage versionning
     /// Label: IL, Unit: mA, Load current, converted to A
     pub load_current: Current,
@@ -103,8 +103,8 @@ pub struct Mppt75_15 {
 
 impl ToString for Mppt75_15 {
     fn to_string(&self) -> String {
-        format!("\r\nPID\t{}\r\nFW\t{}\r\nSER#\t{}\r\nV\t{}\r\nI\t{}\r\nVPV\t{}\r\nPPV\t{}\r\nCS\t{}\r\nMPPT\t{}\r\nOR\t{}\r\nERR\t{}\r\nLOAD\t{}\r\nIL\t{}\r\nH19\t{}\r\nH20\t{}\r\nH21\t{}\r\nH22\t{}\r\nH23\t{}\r\nHSDS\t{}\r\nChecksum\t{}", 
-        self.pid, 
+        format!("\r\nPID\t{}\r\nFW\t{}\r\nSER#\t{}\r\nV\t{}\r\nI\t{}\r\nVPV\t{}\r\nPPV\t{}\r\nCS\t{}\r\nMPPT\t{}\r\nOR\t{}\r\nERR\t{}\r\nLOAD\t{}\r\nIL\t{}\r\nH19\t{}\r\nH20\t{}\r\nH21\t{}\r\nH22\t{}\r\nH23\t{}\r\nHSDS\t{}\r\nChecksum\t{}",
+        self.pid,
         self.firmware,
         self.serial_number,
         self.voltage,
@@ -124,7 +124,7 @@ impl ToString for Mppt75_15 {
         self.max_power_yesterday,
         self.hsds,
         self.checksum,
-        ) 
+        )
     }
 }
 
@@ -171,7 +171,7 @@ impl Map<Mppt75_15> for Mppt75_15 {
             serial_number: convert_string(&hm, "SER#")?,
             voltage: convert_volt(&hm, "V")? / 100f32,
             current: convert_volt(&hm, "I")? / 100f32,
-            load_current : convert_volt(&hm, "IL")?, // TODO: fix that
+            load_current: convert_volt(&hm, "IL")?, // TODO: fix that
             vpv: convert_volt(&hm, "VPV")? / 100f32,
             ppv: convert_watt(&hm, "PPV")?,
             charge_state: convert_charge_state(&hm, "CS")?,
@@ -242,7 +242,6 @@ mod tests_mppt {
 
         let default_frame = "\r\nPID\t0x0000\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0";
 
-        
         assert_eq!(data.pid, String::from("0x0000"));
         assert_eq!(data.firmware, String::from("150"));
         assert_eq!(data.serial_number, "HQ1328Y6TF6");

@@ -1,8 +1,8 @@
+use crate::constants::*;
 use crate::types::*;
 use crate::ve_error::VeError;
-use std::{collections::hash_map::HashMap};
-use crate::constants::*;
 use num_traits::FromPrimitive;
+use std::collections::hash_map::HashMap;
 
 // TODO: Lots of duplicate code here, we probably can do better. See function below.
 // pub fn convert_number<T: FromStr + Debug>(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<T, VeError> {
@@ -52,31 +52,38 @@ pub fn convert_bool(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<bool, 
     Ok(cleaned)
 }
 
-
-
 pub fn convert_err(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Err, VeError> {
     let raw = (*rawkeys)
         .get(label)
         .ok_or(VeError::MissingField(label.into()))?;
     let cleaned = raw.parse::<i32>()?;
-    let error =  FromPrimitive::from_i32(cleaned);
-    
+    let error = FromPrimitive::from_i32(cleaned);
+
     match error {
         Some(x) => Ok(x),
-        None => Err(VeError::Parse(format!("Error parsing integer into Err: {}", raw))),
+        None => Err(VeError::Parse(format!(
+            "Error parsing integer into Err: {}",
+            raw
+        ))),
     }
 }
 
-pub fn convert_charge_state(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<ChargeState, VeError> {
+pub fn convert_charge_state(
+    rawkeys: &HashMap<&str, &str>,
+    label: &str,
+) -> Result<ChargeState, VeError> {
     let raw = (*rawkeys)
         .get(label)
         .ok_or(VeError::MissingField(label.into()))?;
     let cleaned = raw.parse::<i32>()?;
-    let cs =  FromPrimitive::from_i32(cleaned);
-    
+    let cs = FromPrimitive::from_i32(cleaned);
+
     match cs {
         Some(x) => Ok(x),
-        None => Err(VeError::Parse(format!("Error parsing integer into ChargeState: {}", raw))),
+        None => Err(VeError::Parse(format!(
+            "Error parsing integer into ChargeState: {}",
+            raw
+        ))),
     }
 }
 

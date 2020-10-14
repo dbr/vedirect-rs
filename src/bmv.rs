@@ -1,9 +1,9 @@
+use crate::map::Map;
+use crate::parser::Field;
 use crate::types::*;
 use crate::utils::*;
 use crate::ve_error::VeError;
 use std::collections::hash_map::HashMap;
-use crate::map::Map;
-use crate::parser::Field;
 
 // TODO: add bmv600
 /// Data for BMV 600 battery monitor series
