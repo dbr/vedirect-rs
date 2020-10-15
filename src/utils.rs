@@ -110,6 +110,25 @@ pub fn convert_string(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Stri
     Ok(raw.into())
 }
 
+/// From a produc ID in hex such as 0xA042, returns the VictronProductId
+pub fn convert_product_id(
+    rawkeys: &HashMap<&str, &str>,
+    label: &str,
+) -> Result<VictronProductId, VeError> {
+    let raw = *(*rawkeys)
+        .get(label)
+        .ok_or(VeError::MissingField(label.into()))?;
+    let id = u32::from_str_radix(raw.trim_start_matches("0x"), 16)?;
+    let pid = FromPrimitive::from_u32(id);
+    match pid {
+        Some(x) => Ok(x),
+        None => Err(VeError::Parse(format!(
+            "Error parsing integer into VictronProductId: {}",
+            raw
+        ))),
+    }
+}
+
 pub fn convert_ttg(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Minute, VeError> {
     let raw = *(*rawkeys)
         .get(label)

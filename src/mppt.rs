@@ -31,7 +31,7 @@ use std::collections::hash_map::HashMap;
 #[derive(Debug)]
 pub struct Mppt75_15 {
     /// Label: PID, Product ID
-    pub pid: String,
+    pub pid: VictronProductId,
 
     /// Label: FW, Firmware version
     pub firmware: String, // TODO: check if that could be a semver => yes it is. 150 = v1.50
@@ -101,10 +101,69 @@ pub struct Mppt75_15 {
     pub checksum: u8,
 }
 
+pub trait VictronProduct {
+    fn get_name(&self) -> String;
+}
+
+impl VictronProduct for Mppt75_15 {
+    fn get_name(&self) -> String {
+        match self.pid {
+            VictronProductId::BMV700 => "BMV700".into(),
+            VictronProductId::BMV702 => "BMV702".into(),
+            VictronProductId::BMV700H => "BMV700H".into(),
+            VictronProductId::BlueSolar_MPPT_75_10 => "BlueSolar_MPPT_75_10".into(),
+            VictronProductId::BlueSolar_MPPT_150_100 => "BlueSolar_MPPT_150_100".into(),
+            VictronProductId::BlueSolar_MPPT_70_15 => "BlueSolar_MPPT_70_15".into(),
+            VictronProductId::BlueSolar_MPPT_75_15 => "BlueSolar_MPPT_75_15".into(),
+            VictronProductId::BlueSolar_MPPT_100_15 => "BlueSolar_MPPT_100_15".into(),
+            VictronProductId::BlueSolar_MPPT_100_30_rev1 => "BlueSolar_MPPT_100_30_rev1".into(),
+            VictronProductId::BlueSolar_MPPT_100_30_rev2 => "BlueSolar_MPPT_100_30_rev2".into(),
+            VictronProductId::BlueSolar_MPPT_150_35_rev1 => "BlueSolar_MPPT_150_35_rev1".into(),
+            VictronProductId::BlueSolar_MPPT_150_35_rev2 => "BlueSolar_MPPT_150_35_rev2".into(),
+            VictronProductId::BlueSolar_MPPT_150_45 => "BlueSolar_MPPT_150_45".into(),
+            VictronProductId::BlueSolar_MPPT_150_60 => "BlueSolar_MPPT_150_60".into(),
+            VictronProductId::BlueSolar_MPPT_150_70 => "BlueSolar_MPPT_150_70".into(),
+            VictronProductId::BlueSolar_MPPT_150_85 => "BlueSolar_MPPT_150_85".into(),
+            VictronProductId::BlueSolar_MPPT_75_50 => "BlueSolar_MPPT_75_50".into(),
+            VictronProductId::BlueSolar_MPPT_100_50_rev1 => "BlueSolar_MPPT_100_50_rev1".into(),
+            VictronProductId::BlueSolar_MPPT_100_50_rev2 => "BlueSolar_MPPT_100_50_rev2".into(),
+            VictronProductId::SmartSolar_MPPT_150_100 => "SmartSolar_MPPT_150_100".into(),
+            VictronProductId::SmartSolar_MPPT_250_100 => "SmartSolar_MPPT_250_100".into(),
+            VictronProductId::Phoenix_Inverter_12V_250VA_230V => {
+                "Phoenix_Inverter_12V_250VA_230V".into()
+            }
+            VictronProductId::Phoenix_Inverter_24V_250VA_230V => {
+                "Phoenix_Inverter_24V_250VA_230V".into()
+            }
+            VictronProductId::Phoenix_Inverter_48V_250VA_230V => {
+                "Phoenix_Inverter_48V_250VA_230V".into()
+            }
+            VictronProductId::Phoenix_Inverter_12V_375VA_230V => {
+                "Phoenix_Inverter_12V_375VA_230V".into()
+            }
+            VictronProductId::Phoenix_Inverter_24V_375VA_230V => {
+                "Phoenix_Inverter_24V_375VA_230V".into()
+            }
+            VictronProductId::Phoenix_Inverter_48V_375VA_230V => {
+                "Phoenix_Inverter_48V_375VA_230V".into()
+            }
+            VictronProductId::Phoenix_Inverter_12V_500VA_230V => {
+                "Phoenix_Inverter_12V_500VA_230V".into()
+            }
+            VictronProductId::Phoenix_Inverter_24V_500VA_230V => {
+                "Phoenix_Inverter_24V_500VA_230V".into()
+            }
+            VictronProductId::Phoenix_Inverter_48V_500VA_230V => {
+                "Phoenix_Inverter_48V_500VA_230V".into()
+            } // _ => "Unknown".into(),
+        }
+    }
+}
+
 impl ToString for Mppt75_15 {
     fn to_string(&self) -> String {
-        format!("\r\nPID\t{}\r\nFW\t{}\r\nSER#\t{}\r\nV\t{}\r\nI\t{}\r\nVPV\t{}\r\nPPV\t{}\r\nCS\t{}\r\nMPPT\t{}\r\nOR\t{}\r\nERR\t{}\r\nLOAD\t{}\r\nIL\t{}\r\nH19\t{}\r\nH20\t{}\r\nH21\t{}\r\nH22\t{}\r\nH23\t{}\r\nHSDS\t{}\r\nChecksum\t{}",
-        self.pid,
+        format!("\r\nPID\t0x{:X}\r\nFW\t{}\r\nSER#\t{}\r\nV\t{}\r\nI\t{}\r\nVPV\t{}\r\nPPV\t{}\r\nCS\t{}\r\nMPPT\t{}\r\nOR\t{}\r\nERR\t{}\r\nLOAD\t{}\r\nIL\t{}\r\nH19\t{}\r\nH20\t{}\r\nH21\t{}\r\nH22\t{}\r\nH23\t{}\r\nHSDS\t{}\r\nChecksum\t{}",
+        self.pid as u32,
         self.firmware,
         self.serial_number,
         self.voltage,
@@ -131,7 +190,7 @@ impl ToString for Mppt75_15 {
 impl Default for Mppt75_15 {
     fn default() -> Self {
         Self {
-            pid: "0x0000".into(),
+            pid: VictronProductId::BlueSolar_MPPT_75_15,
             firmware: "150".into(),
             serial_number: "HQ1328Y6TF6".into(),
             voltage: 0.0,
@@ -166,7 +225,7 @@ impl Map<Mppt75_15> for Mppt75_15 {
         }
 
         Ok(Mppt75_15 {
-            pid: convert_string(&hm, "PID")?,
+            pid: convert_product_id(&hm, "PID")?,
             firmware: convert_string(&hm, "FW")?,
             serial_number: convert_string(&hm, "SER#")?,
             voltage: convert_volt(&hm, "V")? / 100f32,
@@ -198,7 +257,7 @@ mod tests_mppt {
     fn test_mppt_to_string() {
         let mppt = Mppt75_15::default();
         let frame = mppt.to_string();
-        let default_frame = "\r\nPID\t0x0000\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0";
+        let default_frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0";
         assert_eq!(frame, default_frame);
     }
 
@@ -210,7 +269,7 @@ mod tests_mppt {
         let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
         let data = Mppt75_15::map_fields(&raw).unwrap();
 
-        assert_eq!(data.pid, String::from("0x0000"));
+        assert_eq!(data.pid, VictronProductId::BlueSolar_MPPT_75_15);
         assert_eq!(data.firmware, String::from("150"));
         assert_eq!(data.serial_number, "HQ1328Y6TF6");
         assert_eq!(data.voltage, 0.0);
@@ -240,9 +299,9 @@ mod tests_mppt {
         let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
         let data = Mppt75_15::map_fields(&raw).unwrap();
 
-        let default_frame = "\r\nPID\t0x0000\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0";
+        // let default_frame = "\r\nPID\t0x0000\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0";
 
-        assert_eq!(data.pid, String::from("0x0000"));
+        assert_eq!(data.pid, VictronProductId::BlueSolar_MPPT_75_15);
         assert_eq!(data.firmware, String::from("150"));
         assert_eq!(data.serial_number, "HQ1328Y6TF6");
         assert_eq!(data.voltage, 0.0);

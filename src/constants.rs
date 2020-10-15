@@ -21,7 +21,7 @@ pub enum AlarmReason {
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, FromPrimitive, Copy, Clone, PartialEq)]
-pub enum VictronProducts {
+pub enum VictronProductId {
     BMV700 = 0x203,
     BMV702 = 0x204,
     BMV700H = 0x205,

@@ -105,6 +105,15 @@ mod tests_parser {
     }
 
     #[test]
+    fn test_parse_hex() {
+        let data = "\r\nPID\t0x1234\r\nChecksum\t4".as_bytes();
+        let (data, _remaining) = parse(data).unwrap();
+        assert_eq!(data.len(), 1);
+        assert_eq!(data[0].key, "PID");
+        assert_eq!(data[0].value, "0x1234");
+    }
+
+    #[test]
     #[ignore = "Since Victron decided to throw which chars as field names (ie SER#), we need to revise the non-sense unforntunately"]
     fn test_parse_nonsense() {
         let data = "\r\n!!!!\t\tvalue1\r\nChecksum\t42".as_bytes();
