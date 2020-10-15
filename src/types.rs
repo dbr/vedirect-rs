@@ -5,7 +5,7 @@
 pub type Watt = i32;
 
 #[allow(non_camel_case_types)]
-pub type kWh = i32;
+pub type kWh = f32;
 
 pub type Percent = f32;
 pub type Volt = f32;

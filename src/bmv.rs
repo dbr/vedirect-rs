@@ -48,7 +48,7 @@ impl Map<Bmv700> for Bmv700 {
         }
 
         Ok(Bmv700 {
-            voltage: convert_volt(&hm, "V")?,
+            voltage: convert_f32(&hm, "V")? / 1000_f32,
             power: convert_watt(&hm, "P")?,
             consumed: Some(convert_string(&hm, "CE")?),
             soc: convert_percentage(&hm, "SOC")?,

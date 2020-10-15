@@ -13,14 +13,6 @@ use std::{collections::hash_map::HashMap, fmt::Display};
 //     Ok(cleaned)
 // }
 
-pub fn convert_u32(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<u32, VeError> {
-    let raw = (*rawkeys)
-        .get(label)
-        .ok_or(VeError::MissingField(label.into()))?;
-    let cleaned = raw.parse::<u32>()?;
-    Ok(cleaned)
-}
-
 pub fn convert_percentage(
     rawkeys: &HashMap<&str, &str>,
     label: &str,
@@ -36,11 +28,19 @@ pub fn convert_percentage(
     }
 }
 
-pub fn convert_volt(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Volt, VeError> {
+pub fn convert_f32(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<f32, VeError> {
     let raw = (*rawkeys)
         .get(label)
         .ok_or(VeError::MissingField(label.into()))?;
-    let cleaned = raw.parse::<Volt>()? / 10.0;
+    let cleaned = raw.parse::<f32>()?;
+    Ok(cleaned)
+}
+
+pub fn convert_u32(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<u32, VeError> {
+    let raw = (*rawkeys)
+        .get(label)
+        .ok_or(VeError::MissingField(label.into()))?;
+    let cleaned = raw.parse::<u32>()?;
     Ok(cleaned)
 }
 
@@ -70,14 +70,10 @@ pub fn convert_load_current(
     label: &str,
 ) -> Result<Option<Current>, VeError> {
     let raw = (*rawkeys).get(label);
-    // .ok_or(VeError::MissingField(label.into()))?;
     match raw {
-        Some(field) => Ok(Some(field.parse::<Current>()? / 10.)),
+        Some(field) => Ok(Some(field.parse::<Current>()? / 1000_f32)),
         None => Ok(None),
     }
-
-    // let value = 0;
-    // Ok(Some(value))
 }
 
 pub fn convert_err(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Err, VeError> {
@@ -127,7 +123,7 @@ pub fn convert_yield(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<kWh, 
     let raw = (*rawkeys)
         .get(label)
         .ok_or(VeError::MissingField(label.into()))?;
-    let cleaned = raw.parse::<kWh>()?;
+    let cleaned = raw.parse::<kWh>()? / 100_f32;
     Ok(cleaned)
 }
 
