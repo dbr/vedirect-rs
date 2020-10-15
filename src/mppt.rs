@@ -29,19 +29,21 @@ use std::collections::hash_map::HashMap;
 // HSDS    279
 // Checksum        �
 
-/// Data for all MPPT solar charge controller
+/// Support for all MPPT solar charge controllers.
 #[derive(Debug)]
-pub struct Mppt75_15 {
+pub struct Mppt {
     /// Label: PID, Product ID
     pub pid: VictronProductId,
 
     /// Label: FW, Firmware version
     pub firmware: String, // TODO: check if that could be a semver => yes it is. 150 = v1.50
 
-    /// Label: SER#, Serial Number
     /// The serial number of the device. The notation is LLYYMMSSSSS, where LL=location code,
     /// YYWW=production datestamp (year, week) and SSSSS=unique part of the serial number.
     /// Example: HQ1328Y6TF6
+    ///
+    /// Specs:
+    /// - Frame Label: SER#
     pub serial_number: String,
 
     /// Main (battery) voltage.
@@ -60,13 +62,26 @@ pub struct Mppt75_15 {
     /// - Field unit: A
     pub current: Current,
 
-    /// Label: VPV, Unit: mV, Panel voltage, converted to V.
+    /// Panel voltage, converted to V.
+    ///
+    /// Specs:
+    /// - Frame Label: VPV
+    /// - Frame Unit: mV
+    /// - Field unit: V
     pub vpv: Volt,
 
-    /// Label: PPV, Unit: W, Panel Power
+    /// Panel Power
+    ///
+    /// Specs:
+    /// - Frame Label: PPV
+    /// - Frame Unit: W
+    /// - Field unit: W
     pub ppv: Watt,
 
-    /// Label: CS, State of Operation
+    /// State of Operation
+    ///
+    /// Specs:
+    /// - Frame Label: CS
     pub charge_state: ChargeState,
 
     // TODO: check what MPPT is
@@ -77,37 +92,79 @@ pub struct Mppt75_15 {
     /// Label: OR, Unsure what this is so catching it as String for now
     pub or: String,
 
-    /// Label: ERR, Error code    
+    /// Error code    
+    ///
+    /// Specs:
+    /// - Frame Label: ERR
     pub error: Err,
 
-    /// Label: LOAD, Whether the load is turned ON(true) or OFF(false)
+    /// Whether the load is turned ON(true) or OFF(false)
+    ///
+    /// Specs:
+    /// - Frame Label: LOAD
     pub load: Option<bool>,
 
-    /// Label: IL, Unit: mA, Load current, converted to A
+    /// Load current, converted to A
+    ///
+    /// Specs:
+    /// - Frame Label: IL
+    /// - Frame Unit: mA
+    /// - Field unit: A
     pub load_current: Option<Current>,
 
-    /// Label: H19, Yield total (user resettable counter) in 0.01 kWh converted to kWh
+    /// Yield total (user resettable counter) in 0.01 kWh converted to kWh
+    ///
+    /// Specs:
+    /// - Frame Label: H19
+    /// - Frame Unit: 0.01 kWh
+    /// - Field unit: kWh
     pub yield_total: kWh,
 
-    /// Label: H20, Yield today in 0.01 kWh converted to kWh
+    /// Yield today in 0.01 kWh converted to kWh
+    ///
+    /// Specs:
+    /// - Frame Label: H20
+    /// - Frame Unit: 0.01 kWh
+    /// - Field unit: kWh
     pub yield_today: kWh,
 
-    /// Label: H21, Maximum power today
+    /// Maximum power today
+    ///
+    /// Specs:
+    /// - Frame Label: H21
+    /// - Frame Unit: W
+    /// - Field unit: W
     pub max_power_today: Watt,
 
-    /// Label: H22, Yield today in 0.01 kWh converted to kWh
+    /// Yield today in 0.01 kWh converted to kWh
+    ///
+    /// Specs:
+    /// - Frame Label: H22
+    /// - Frame Unit: 0.01 kWh
+    /// - Field unit: kWh
     pub yield_yesterday: kWh,
 
-    /// Label: H23, Maximum power today
+    /// Maximum power today
+    ///
+    /// Specs:
+    /// - Frame Label: H23
+    /// - Frame Unit: W
+    /// - Field unit: W
     pub max_power_yesterday: Watt,
 
-    /// Label: HSDS
     /// Historical data. The day sequence number, a change in this number indicates a new day. This
     /// implies that the historical data has changed. Range 0..364.
+    ///
     /// Note: The HSDS field is available in the MPPT charger since version v1.16.
+    ///
+    /// Specs:
+    /// - Frame Label: HSDS
     pub hsds: u16,
 
-    /// label: Checksum, the checksum
+    /// The checksum
+    ///
+    /// Specs:
+    /// - Frame label: Checksum
     pub checksum: u8,
 }
 
@@ -115,7 +172,7 @@ pub trait VictronProduct {
     fn get_name(&self) -> String;
 }
 
-impl VictronProduct for Mppt75_15 {
+impl VictronProduct for Mppt {
     fn get_name(&self) -> String {
         match self.pid {
             VictronProductId::BMV700 => "BMV-700".into(),
@@ -170,7 +227,7 @@ impl VictronProduct for Mppt75_15 {
     }
 }
 
-impl ToString for Mppt75_15 {
+impl ToString for Mppt {
     fn to_string(&self) -> String {
         format!("{pid}{fw}{ser}{v}{i}{vpv}{ppv}{cs}{mppt}{or}{err}{load}{il}{h19}{h20}{h21}{h22}{h23}{hsds}{checksum}",
         pid = get_field_string("PID", Some(format!("0x{:X}", self.pid as u32))),
@@ -202,7 +259,7 @@ impl ToString for Mppt75_15 {
     }
 }
 
-impl Default for Mppt75_15 {
+impl Default for Mppt {
     fn default() -> Self {
         Self {
             pid: VictronProductId::BlueSolar_MPPT_75_15,
@@ -232,14 +289,14 @@ impl Default for Mppt75_15 {
     }
 }
 
-impl Map<Mppt75_15> for Mppt75_15 {
+impl Map<Mppt> for Mppt {
     fn map_fields(fields: &Vec<Field>) -> Result<Self, VeError> {
         let mut hm: HashMap<&str, &str> = HashMap::new();
         for f in fields {
             hm.insert(f.key, f.value);
         }
 
-        Ok(Mppt75_15 {
+        Ok(Mppt {
             pid: convert_product_id(&hm, "PID")?,
             firmware: convert_string(&hm, "FW")?,
             serial_number: convert_string(&hm, "SER#")?,
@@ -266,11 +323,11 @@ impl Map<Mppt75_15> for Mppt75_15 {
     }
 }
 
-impl Mppt75_15 {
+impl Mppt {
     /// Creates a new device based on the provided frame.
     pub fn new(frame: &[u8]) -> Result<Self, VeError> {
         let (raw, _remainder) = crate::parser::parse(frame)?;
-        Mppt75_15::map_fields(&raw)
+        Mppt::map_fields(&raw)
     }
 
     /// This ctor is mainly used for some of the tests to prevent having to generate frames.
@@ -327,7 +384,7 @@ mod tests_mppt {
 
     #[test]
     fn test_mppt_to_string() {
-        let mppt = Mppt75_15::default();
+        let mppt = Mppt::default();
         let frame = mppt.to_string();
         let default_frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0";
         assert_eq!(frame, default_frame);
@@ -335,11 +392,11 @@ mod tests_mppt {
 
     #[test]
     fn test_mppt_1() {
-        let mppt = Mppt75_15::default();
+        let mppt = Mppt::default();
         let frame = mppt.to_string();
         let sample_frame = frame.as_bytes();
         let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
-        let device = Mppt75_15::map_fields(&raw).unwrap();
+        let device = Mppt::map_fields(&raw).unwrap();
 
         assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
         assert_eq!(device.firmware, String::from("150"));
@@ -369,7 +426,7 @@ mod tests_mppt {
     fn test_mppt_older_versions() {
         let sample_frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0".as_bytes();
         let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
-        let device = Mppt75_15::map_fields(&raw).unwrap();
+        let device = Mppt::map_fields(&raw).unwrap();
 
         assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
         assert_eq!(device.firmware, String::from("150"));
@@ -414,7 +471,7 @@ mod tests_mppt {
             \r\nHSDS\t0\
             \r\nChecksum\t0"
             .as_bytes();
-        let device = Mppt75_15::new(frame).unwrap();
+        let device = Mppt::new(frame).unwrap();
 
         assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
         assert_eq!(device.firmware, String::from("150"));
@@ -440,7 +497,7 @@ mod tests_mppt {
 
     #[test]
     fn test_mppt_init() {
-        let device = Mppt75_15::init(
+        let device = Mppt::init(
             VictronProductId::BlueSolar_MPPT_75_15,
             "420".into(),
             "HQ1328Y6TF6".into(),

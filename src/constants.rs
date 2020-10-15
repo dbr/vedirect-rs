@@ -1,8 +1,8 @@
 use num_derive::FromPrimitive;
 use std::fmt;
 use std::fmt::Display;
-// use num_traits::FromPrimitive;
 
+/// Alarm reasons
 #[derive(Debug, FromPrimitive, Copy, Clone, PartialEq)]
 pub enum AlarmReason {
     LowVoltage = 1,
@@ -19,6 +19,7 @@ pub enum AlarmReason {
     HighVACout = 2048,
 }
 
+/// Supported/Known Victron products and models.
 #[allow(non_camel_case_types)]
 #[derive(Debug, FromPrimitive, Copy, Clone, PartialEq)]
 pub enum VictronProductId {
@@ -57,6 +58,7 @@ pub enum VictronProductId {
     Phoenix_Inverter_48V_500VA_230V = 0xA224,
 }
 
+/// Device modes
 #[allow(non_camel_case_types)]
 #[derive(Debug, FromPrimitive, Copy, Clone, PartialEq)]
 pub enum DeviceMode {
@@ -65,6 +67,7 @@ pub enum DeviceMode {
     VE_REG_MODE_ECO = 5,
 }
 
+/// Charge states
 #[derive(Debug, FromPrimitive, Copy, Clone, PartialEq)]
 pub enum ChargeState {
     Off = 0,
@@ -82,6 +85,7 @@ impl Display for ChargeState {
     }
 }
 
+/// Victron Error codes
 #[derive(Debug, FromPrimitive, Copy, Clone, PartialEq)]
 pub enum Err {
     NoError = 0,

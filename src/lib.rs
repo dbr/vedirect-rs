@@ -1,3 +1,7 @@
+//! Crate to parse Victron VE.Direct frames and provide data in a rusty way.
+//!
+//! Library to parse the Victron Energy "VE.Direct" protocol and map the data to useful structs with clear units.
+
 mod bmv;
 mod constants;
 mod map;
@@ -7,9 +11,8 @@ mod types;
 mod utils;
 mod ve_error;
 
-// Re-export
-pub use parser::parse;
-// pub use bmv::map_fields_bmv700;
 pub use bmv::Bmv700;
-pub use constants::*;
 pub use map::Map;
+pub use mppt::Mppt;
+
+pub use constants::*;
