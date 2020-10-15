@@ -2,7 +2,7 @@ use crate::constants::*;
 use crate::types::*;
 use crate::ve_error::VeError;
 use num_traits::FromPrimitive;
-use std::collections::hash_map::HashMap;
+use std::{collections::hash_map::HashMap, fmt::Display};
 
 // TODO: Lots of duplicate code here, we probably can do better. See function below.
 // pub fn convert_number<T: FromStr + Debug>(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<T, VeError> {
@@ -44,12 +44,40 @@ pub fn convert_volt(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Volt, 
     Ok(cleaned)
 }
 
-pub fn convert_bool(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<bool, VeError> {
-    let raw = (*rawkeys)
-        .get(label)
-        .ok_or(VeError::MissingField(label.into()))?;
-    let cleaned = String::from(*raw).contains("ON");
-    Ok(cleaned)
+/// The goal of this function is to simply (=remove) all the \r\n and \t we have all over the place.
+/// It also helps with the generation of frames where some values (such as the load) are optionnal.
+pub fn get_field_string<T: Display>(label: &str, value: Option<T>) -> String {
+    match value {
+        Some(v) => format!("\r\n{}\t{}", label, v),
+        None => String::from(""),
+    }
+}
+
+/// This function converts the LOAD field. This field is special as it *may* not be present.
+/// In that case, this is not an error but probably either a model with no load or an older firmware.
+pub fn convert_load(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Option<bool>, VeError> {
+    let raw = (*rawkeys).get(label);
+    match raw {
+        Some(field) => Ok(Some(String::from(*field).contains("ON"))),
+        None => Ok(None),
+    }
+}
+
+/// This function converts the IL field (Load Current). This field is special as it *may* not be present.
+/// In that case, this is not an error but probably either a model with no load or an older firmware.
+pub fn convert_load_current(
+    rawkeys: &HashMap<&str, &str>,
+    label: &str,
+) -> Result<Option<Current>, VeError> {
+    let raw = (*rawkeys).get(label);
+    // .ok_or(VeError::MissingField(label.into()))?;
+    match raw {
+        Some(field) => Ok(Some(field.parse::<Current>()? / 10.)),
+        None => Ok(None),
+    }
+
+    // let value = 0;
+    // Ok(Some(value))
 }
 
 pub fn convert_err(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Err, VeError> {
@@ -156,5 +184,15 @@ mod tests_utils {
     fn test_convert_percentage2() {
         let hm: HashMap<&str, &str> = seq!(("P", "---"));
         assert_eq!(convert_percentage(&hm, "P").unwrap(), None);
+    }
+
+    #[test]
+    fn test_get_field_string_some() {
+        assert_eq!(get_field_string("ABC", Some(3.14)), "\r\nABC\t3.14");
+    }
+
+    #[test]
+    fn test_get_field_string_none() {
+        assert_eq!(get_field_string::<u32>("ABC", None), "");
     }
 }

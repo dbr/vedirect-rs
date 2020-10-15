@@ -68,13 +68,11 @@ pub struct Mppt75_15 {
     /// Label: ERR, Error code    
     pub error: Err,
 
-    // TODO: only available for models with load output and since Firmware v1.12 so we should probably make that an Option<bool> or manage versionning
     /// Label: LOAD, Whether the load is turned ON(true) or OFF(false)
-    pub load: bool,
+    pub load: Option<bool>,
 
-    // TODO: only available for models with load output and since Firmware v1.15 so we should probably make that an Option<bool> or manage versionning
     /// Label: IL, Unit: mA, Load current, converted to A
-    pub load_current: Current,
+    pub load_current: Option<Current>,
 
     /// Label: H19, Yield total (user resettable counter) in 0.01 kWh converted to kWh
     pub yield_total: kWh,
@@ -162,27 +160,32 @@ impl VictronProduct for Mppt75_15 {
 
 impl ToString for Mppt75_15 {
     fn to_string(&self) -> String {
-        format!("\r\nPID\t0x{:X}\r\nFW\t{}\r\nSER#\t{}\r\nV\t{}\r\nI\t{}\r\nVPV\t{}\r\nPPV\t{}\r\nCS\t{}\r\nMPPT\t{}\r\nOR\t{}\r\nERR\t{}\r\nLOAD\t{}\r\nIL\t{}\r\nH19\t{}\r\nH20\t{}\r\nH21\t{}\r\nH22\t{}\r\nH23\t{}\r\nHSDS\t{}\r\nChecksum\t{}",
-        self.pid as u32,
-        self.firmware,
-        self.serial_number,
-        self.voltage,
-        self.current,
-        self.vpv,
-        self.ppv,
-        self.charge_state as u32,
-        self.mppt,
-        self.or,
-        self.error as u32,
-        if self.load { "ON" } else { "OFF" },
-        self.load_current,
-        self.yield_total,
-        self.yield_today,
-        self.max_power_today,
-        self.yield_yesterday,
-        self.max_power_yesterday,
-        self.hsds,
-        self.checksum,
+        format!("{pid}{fw}{ser}{v}{i}{vpv}{ppv}{cs}{mppt}{or}{err}{load}{il}{h19}{h20}{h21}{h22}{h23}{hsds}{checksum}",
+        pid = get_field_string("PID", Some(format!("0x{:X}", self.pid as u32))),
+        fw = get_field_string("FW", Some(&self.firmware)),
+        ser = get_field_string("SER#", Some(&self.serial_number)),
+        v = get_field_string("V", Some(self.voltage)),
+        i = get_field_string("I", Some(self.current)),
+        vpv= get_field_string("VPV", Some(self.vpv)),
+        ppv = get_field_string("PPV", Some(self.ppv)),
+        cs = get_field_string("CS", Some(self.charge_state as u32)),
+        mppt= get_field_string("MPPT", Some(&self.mppt)),
+        or = get_field_string("OR", Some(&self.or)),
+        err = get_field_string("ERR", Some(self.error as u32)),
+
+        load = get_field_string("LOAD", match self.load {
+            Some(state) => if state { Some("ON") } else { Some("OFF") },
+            None => None,
+        }),
+        il = get_field_string("IL", self.load_current),
+
+        h19 = get_field_string("H19", Some(self.yield_total)),
+        h20 = get_field_string("H20", Some(self.yield_today)),
+        h21 = get_field_string("H21", Some(self.max_power_today)),
+        h22 = get_field_string("H22", Some(self.yield_yesterday)),
+        h23 = get_field_string("H23", Some(self.max_power_yesterday)),
+        hsds = get_field_string("HSDS", Some(self.hsds)),
+        checksum = get_field_string("Checksum", Some(self.checksum)),
         )
     }
 }
@@ -200,7 +203,6 @@ impl Default for Mppt75_15 {
             charge_state: ChargeState::Off,
             mppt: "0".into(),
             or: "0x00000001".into(),
-            load_current: 0.0,
 
             yield_total: 0,
             yield_today: 0,
@@ -208,10 +210,11 @@ impl Default for Mppt75_15 {
             yield_yesterday: 0,
             max_power_yesterday: 0,
 
-            error: Err::NoError,
-            load: false,
+            load: None,
+            load_current: None,
 
             hsds: 0,
+            error: Err::NoError,
             checksum: 0,
         }
     }
@@ -230,14 +233,16 @@ impl Map<Mppt75_15> for Mppt75_15 {
             serial_number: convert_string(&hm, "SER#")?,
             voltage: convert_volt(&hm, "V")? / 100f32,
             current: convert_volt(&hm, "I")? / 100f32,
-            load_current: convert_volt(&hm, "IL")?, // TODO: fix that
             vpv: convert_volt(&hm, "VPV")? / 100f32,
             ppv: convert_watt(&hm, "PPV")?,
             charge_state: convert_charge_state(&hm, "CS")?,
             mppt: convert_string(&hm, "MPPT")?,
             or: convert_string(&hm, "OR")?,
             error: convert_err(&hm, "ERR")?,
-            load: convert_bool(&hm, "LOAD")?,
+
+            load: convert_load(&hm, "LOAD")?,
+            load_current: convert_load_current(&hm, "IL")?, // TODO: fix that
+
             yield_total: convert_yield(&hm, "H19")?,
             yield_today: convert_yield(&hm, "H20")?,
             max_power_today: convert_watt(&hm, "H21")?,
@@ -257,7 +262,7 @@ mod tests_mppt {
     fn test_mppt_to_string() {
         let mppt = Mppt75_15::default();
         let frame = mppt.to_string();
-        let default_frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0";
+        let default_frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0";
         assert_eq!(frame, default_frame);
     }
 
@@ -274,14 +279,14 @@ mod tests_mppt {
         assert_eq!(device.serial_number, "HQ1328Y6TF6");
         assert_eq!(device.voltage, 0.0);
         assert_eq!(device.current, 0.0);
-        assert_eq!(device.load_current, 0.0);
+        assert_eq!(device.load, None);
+        assert_eq!(device.load_current, None);
         assert_eq!(device.vpv, 0.0);
         assert_eq!(device.ppv, 0);
         assert_eq!(device.charge_state, ChargeState::Off);
         assert_eq!(device.mppt, "0");
         assert_eq!(device.or, "0x00000001");
         assert_eq!(device.error, Err::NoError);
-        assert_eq!(device.load, false);
         assert_eq!(device.yield_total, 0);
         assert_eq!(device.yield_today, 0);
         assert_eq!(device.max_power_today, 0);
@@ -295,27 +300,21 @@ mod tests_mppt {
 
     #[test]
     fn test_mppt_older_versions() {
-        let mppt = Mppt75_15::default();
-        let frame = mppt.to_string();
-        let sample_frame = frame.as_bytes();
+        let sample_frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0".as_bytes();
         let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
         let device = Mppt75_15::map_fields(&raw).unwrap();
-
-        // let default_frame = "\r\nPID\t0x0000\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0";
 
         assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
         assert_eq!(device.firmware, String::from("150"));
         assert_eq!(device.serial_number, "HQ1328Y6TF6");
         assert_eq!(device.voltage, 0.0);
         assert_eq!(device.current, 0.0);
-        assert_eq!(device.load_current, 0.0);
         assert_eq!(device.vpv, 0.0);
         assert_eq!(device.ppv, 0);
         assert_eq!(device.charge_state, ChargeState::Off);
         assert_eq!(device.mppt, "0");
         assert_eq!(device.or, "0x00000001");
         assert_eq!(device.error, Err::NoError);
-        assert_eq!(device.load, false);
         assert_eq!(device.yield_total, 0);
         assert_eq!(device.yield_today, 0);
         assert_eq!(device.max_power_today, 0);
