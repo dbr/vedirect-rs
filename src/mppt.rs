@@ -108,53 +108,53 @@ pub trait VictronProduct {
 impl VictronProduct for Mppt75_15 {
     fn get_name(&self) -> String {
         match self.pid {
-            VictronProductId::BMV700 => "BMV700".into(),
-            VictronProductId::BMV702 => "BMV702".into(),
-            VictronProductId::BMV700H => "BMV700H".into(),
-            VictronProductId::BlueSolar_MPPT_75_10 => "BlueSolar_MPPT_75_10".into(),
-            VictronProductId::BlueSolar_MPPT_150_100 => "BlueSolar_MPPT_150_100".into(),
-            VictronProductId::BlueSolar_MPPT_70_15 => "BlueSolar_MPPT_70_15".into(),
-            VictronProductId::BlueSolar_MPPT_75_15 => "BlueSolar_MPPT_75_15".into(),
-            VictronProductId::BlueSolar_MPPT_100_15 => "BlueSolar_MPPT_100_15".into(),
-            VictronProductId::BlueSolar_MPPT_100_30_rev1 => "BlueSolar_MPPT_100_30_rev1".into(),
-            VictronProductId::BlueSolar_MPPT_100_30_rev2 => "BlueSolar_MPPT_100_30_rev2".into(),
-            VictronProductId::BlueSolar_MPPT_150_35_rev1 => "BlueSolar_MPPT_150_35_rev1".into(),
-            VictronProductId::BlueSolar_MPPT_150_35_rev2 => "BlueSolar_MPPT_150_35_rev2".into(),
-            VictronProductId::BlueSolar_MPPT_150_45 => "BlueSolar_MPPT_150_45".into(),
-            VictronProductId::BlueSolar_MPPT_150_60 => "BlueSolar_MPPT_150_60".into(),
-            VictronProductId::BlueSolar_MPPT_150_70 => "BlueSolar_MPPT_150_70".into(),
-            VictronProductId::BlueSolar_MPPT_150_85 => "BlueSolar_MPPT_150_85".into(),
-            VictronProductId::BlueSolar_MPPT_75_50 => "BlueSolar_MPPT_75_50".into(),
-            VictronProductId::BlueSolar_MPPT_100_50_rev1 => "BlueSolar_MPPT_100_50_rev1".into(),
-            VictronProductId::BlueSolar_MPPT_100_50_rev2 => "BlueSolar_MPPT_100_50_rev2".into(),
-            VictronProductId::SmartSolar_MPPT_150_100 => "SmartSolar_MPPT_150_100".into(),
-            VictronProductId::SmartSolar_MPPT_250_100 => "SmartSolar_MPPT_250_100".into(),
+            VictronProductId::BMV700 => "BMV-700".into(),
+            VictronProductId::BMV702 => "BMV-702".into(),
+            VictronProductId::BMV700H => "BMV-700H".into(),
+            VictronProductId::BlueSolar_MPPT_75_10 => "BlueSolar MPPT 75/10".into(),
+            VictronProductId::BlueSolar_MPPT_150_100 => "BlueSolar MPPT 150/100".into(),
+            VictronProductId::BlueSolar_MPPT_70_15 => "BlueSolar MPPT 70/15".into(),
+            VictronProductId::BlueSolar_MPPT_75_15 => "BlueSolar MPPT 75/15".into(),
+            VictronProductId::BlueSolar_MPPT_100_15 => "BlueSolar MPPT 100/15".into(),
+            VictronProductId::BlueSolar_MPPT_100_30_rev1 => "BlueSolar MPPT 100/30 rev1".into(),
+            VictronProductId::BlueSolar_MPPT_100_30_rev2 => "BlueSolar MPPT 100/30 rev2".into(),
+            VictronProductId::BlueSolar_MPPT_150_35_rev1 => "BlueSolar MPPT 150/35 rev1".into(),
+            VictronProductId::BlueSolar_MPPT_150_35_rev2 => "BlueSolar MPPT 150/35 rev2".into(),
+            VictronProductId::BlueSolar_MPPT_150_45 => "BlueSolar MPPT 150/45".into(),
+            VictronProductId::BlueSolar_MPPT_150_60 => "BlueSolar MPPT 150/60".into(),
+            VictronProductId::BlueSolar_MPPT_150_70 => "BlueSolar MPPT 150/70".into(),
+            VictronProductId::BlueSolar_MPPT_150_85 => "BlueSolar MPPT 150/85".into(),
+            VictronProductId::BlueSolar_MPPT_75_50 => "BlueSolar MPPT 75/50".into(),
+            VictronProductId::BlueSolar_MPPT_100_50_rev1 => "BlueSolar MPPT 100/50 rev1".into(),
+            VictronProductId::BlueSolar_MPPT_100_50_rev2 => "BlueSolar MPPT 100/50 rev2".into(),
+            VictronProductId::SmartSolar_MPPT_150_100 => "SmartSolar MPPT 150/100".into(),
+            VictronProductId::SmartSolar_MPPT_250_100 => "SmartSolar MPPT 250/100".into(),
             VictronProductId::Phoenix_Inverter_12V_250VA_230V => {
-                "Phoenix_Inverter_12V_250VA_230V".into()
+                "Phoenix Inverter 12V 250VA 230V".into()
             }
             VictronProductId::Phoenix_Inverter_24V_250VA_230V => {
-                "Phoenix_Inverter_24V_250VA_230V".into()
+                "Phoenix Inverter 24V 250VA 230V".into()
             }
             VictronProductId::Phoenix_Inverter_48V_250VA_230V => {
-                "Phoenix_Inverter_48V_250VA_230V".into()
+                "Phoenix Inverter 48V 250VA 230V".into()
             }
             VictronProductId::Phoenix_Inverter_12V_375VA_230V => {
-                "Phoenix_Inverter_12V_375VA_230V".into()
+                "Phoenix Inverter 12V 375VA 230V".into()
             }
             VictronProductId::Phoenix_Inverter_24V_375VA_230V => {
-                "Phoenix_Inverter_24V_375VA_230V".into()
+                "Phoenix Inverter 24V 375VA 230V".into()
             }
             VictronProductId::Phoenix_Inverter_48V_375VA_230V => {
-                "Phoenix_Inverter_48V_375VA_230V".into()
+                "Phoenix Inverter 48V 375VA 230V".into()
             }
             VictronProductId::Phoenix_Inverter_12V_500VA_230V => {
-                "Phoenix_Inverter_12V_500VA_230V".into()
+                "Phoenix Inverter 12V 500VA 230V".into()
             }
             VictronProductId::Phoenix_Inverter_24V_500VA_230V => {
-                "Phoenix_Inverter_24V_500VA_230V".into()
+                "Phoenix Inverter 24V 500VA 230V".into()
             }
             VictronProductId::Phoenix_Inverter_48V_500VA_230V => {
-                "Phoenix_Inverter_48V_500VA_230V".into()
+                "Phoenix Inverter 48V 500VA 230V".into()
             } // _ => "Unknown".into(),
         }
     }
@@ -267,28 +267,30 @@ mod tests_mppt {
         let frame = mppt.to_string();
         let sample_frame = frame.as_bytes();
         let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
-        let data = Mppt75_15::map_fields(&raw).unwrap();
+        let device = Mppt75_15::map_fields(&raw).unwrap();
 
-        assert_eq!(data.pid, VictronProductId::BlueSolar_MPPT_75_15);
-        assert_eq!(data.firmware, String::from("150"));
-        assert_eq!(data.serial_number, "HQ1328Y6TF6");
-        assert_eq!(data.voltage, 0.0);
-        assert_eq!(data.current, 0.0);
-        assert_eq!(data.load_current, 0.0);
-        assert_eq!(data.vpv, 0.0);
-        assert_eq!(data.ppv, 0);
-        assert_eq!(data.charge_state, ChargeState::Off);
-        assert_eq!(data.mppt, "0");
-        assert_eq!(data.or, "0x00000001");
-        assert_eq!(data.error, Err::NoError);
-        assert_eq!(data.load, false);
-        assert_eq!(data.yield_total, 0);
-        assert_eq!(data.yield_today, 0);
-        assert_eq!(data.max_power_today, 0);
-        assert_eq!(data.yield_yesterday, 0);
-        assert_eq!(data.max_power_yesterday, 0);
-        assert_eq!(data.hsds, 0);
-        assert_eq!(data.checksum, 0);
+        assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
+        assert_eq!(device.firmware, String::from("150"));
+        assert_eq!(device.serial_number, "HQ1328Y6TF6");
+        assert_eq!(device.voltage, 0.0);
+        assert_eq!(device.current, 0.0);
+        assert_eq!(device.load_current, 0.0);
+        assert_eq!(device.vpv, 0.0);
+        assert_eq!(device.ppv, 0);
+        assert_eq!(device.charge_state, ChargeState::Off);
+        assert_eq!(device.mppt, "0");
+        assert_eq!(device.or, "0x00000001");
+        assert_eq!(device.error, Err::NoError);
+        assert_eq!(device.load, false);
+        assert_eq!(device.yield_total, 0);
+        assert_eq!(device.yield_today, 0);
+        assert_eq!(device.max_power_today, 0);
+        assert_eq!(device.yield_yesterday, 0);
+        assert_eq!(device.max_power_yesterday, 0);
+        assert_eq!(device.hsds, 0);
+        assert_eq!(device.checksum, 0);
+
+        assert_eq!(device.get_name(), "BlueSolar MPPT 75/15");
     }
 
     #[test]
@@ -297,29 +299,29 @@ mod tests_mppt {
         let frame = mppt.to_string();
         let sample_frame = frame.as_bytes();
         let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
-        let data = Mppt75_15::map_fields(&raw).unwrap();
+        let device = Mppt75_15::map_fields(&raw).unwrap();
 
         // let default_frame = "\r\nPID\t0x0000\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nLOAD\tOFF\r\nIL\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0";
 
-        assert_eq!(data.pid, VictronProductId::BlueSolar_MPPT_75_15);
-        assert_eq!(data.firmware, String::from("150"));
-        assert_eq!(data.serial_number, "HQ1328Y6TF6");
-        assert_eq!(data.voltage, 0.0);
-        assert_eq!(data.current, 0.0);
-        assert_eq!(data.load_current, 0.0);
-        assert_eq!(data.vpv, 0.0);
-        assert_eq!(data.ppv, 0);
-        assert_eq!(data.charge_state, ChargeState::Off);
-        assert_eq!(data.mppt, "0");
-        assert_eq!(data.or, "0x00000001");
-        assert_eq!(data.error, Err::NoError);
-        assert_eq!(data.load, false);
-        assert_eq!(data.yield_total, 0);
-        assert_eq!(data.yield_today, 0);
-        assert_eq!(data.max_power_today, 0);
-        assert_eq!(data.yield_yesterday, 0);
-        assert_eq!(data.max_power_yesterday, 0);
-        assert_eq!(data.hsds, 0);
-        assert_eq!(data.checksum, 0);
+        assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
+        assert_eq!(device.firmware, String::from("150"));
+        assert_eq!(device.serial_number, "HQ1328Y6TF6");
+        assert_eq!(device.voltage, 0.0);
+        assert_eq!(device.current, 0.0);
+        assert_eq!(device.load_current, 0.0);
+        assert_eq!(device.vpv, 0.0);
+        assert_eq!(device.ppv, 0);
+        assert_eq!(device.charge_state, ChargeState::Off);
+        assert_eq!(device.mppt, "0");
+        assert_eq!(device.or, "0x00000001");
+        assert_eq!(device.error, Err::NoError);
+        assert_eq!(device.load, false);
+        assert_eq!(device.yield_total, 0);
+        assert_eq!(device.yield_today, 0);
+        assert_eq!(device.max_power_today, 0);
+        assert_eq!(device.yield_yesterday, 0);
+        assert_eq!(device.max_power_yesterday, 0);
+        assert_eq!(device.hsds, 0);
+        assert_eq!(device.checksum, 0);
     }
 }
