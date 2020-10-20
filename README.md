@@ -38,3 +38,10 @@ Early development.
 - [ ] Mapping of all fields of BMV
 - [ ] Mapping of all fields for MPPT
 - [ ] Mapping of all fields for inverters
+
+## Run examples
+
+Here are a few sample call to run the provided examples.
+
+- cargo run --example read_serial
+- cargo run --example serialport -- /dev/tty.SLAB_USBtoUART 19200
