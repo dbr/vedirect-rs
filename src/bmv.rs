@@ -40,7 +40,7 @@ pub struct Bmv700 {
 impl Map<Bmv700> for Bmv700 {
     /// "When the BMV is not synchronised, these statistics have no meaning, so "---" will be sent instead of a value"
     /// Take a list of fields and creates an easier to use structure
-    fn map_fields(fields: &Vec<Field>) -> Result<Self, VeError> {
+    fn map_fields(fields: &Vec<Field>, _checksum: u8) -> Result<Self, VeError> {
         // Convert from list into map
         let mut hm: HashMap<&str, &str> = HashMap::new();
         for f in fields {
@@ -60,18 +60,17 @@ impl Map<Bmv700> for Bmv700 {
 #[cfg(test)]
 mod tests_mppt {
     use super::*;
+    use crate::checksum;
 
     #[test]
     fn test_mapping() {
-        let (raw, _remainder) = crate::parser::parse(
-        "\r\nP\t123\r\nCE\t53\r\nSOC\t452\r\nTTG\t60\r\nRelay\tOFF\r\nAlarm\tOFF\r\nV\t232\r\nChecksum\t12".as_bytes(),
-    )
-    .unwrap();
-        let data = Bmv700::map_fields(&raw).unwrap();
+        let frame = checksum::append("\r\nP\t123\r\nCE\t53\r\nSOC\t452\r\nTTG\t60\r\nRelay\tOFF\r\nAlarm\tOFF\r\nV\t232\r\nChecksum\t".as_bytes(), 149);
+        let (raw, checksum, _remainder) = crate::parser::parse(&frame).unwrap();
+        let data = Bmv700::map_fields(&raw, checksum).unwrap();
         assert_eq!(data.power, 123);
         assert_eq!(data.consumed, Some("53".into()));
         assert_eq!(data.soc, Some(45.2));
         assert_eq!(data.ttg, 60);
-        assert_eq!(data.voltage, 23.2);
+        assert_eq!(data.voltage, 0.232);
     }
 }

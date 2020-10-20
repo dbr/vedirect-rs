@@ -1,7 +1,7 @@
 use clap::{App, AppSettings, Arg};
 use serialport::prelude::*;
 use serialport::{available_ports, SerialPortType};
-use std::io::{self, Write};
+use std::io::{self};
 use std::time::Duration;
 
 fn valid_baud(val: String) -> Result<(), String> {
@@ -60,7 +60,7 @@ fn process_buffer(serial_buf: &Vec<u8>, size: usize) {
     let buffer = &serial_buf[..size];
     // io::stdout().write_all(buffer).unwrap();
 
-    let device = vedirect::Mppt::new(&buffer);
+    let device = vedirect::MpptFrame::new(&buffer);
     match device {
         Ok(data) => println!("{:?}", data),
         Err(e) => println!("{:?}", e),

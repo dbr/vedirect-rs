@@ -33,10 +33,10 @@ pub fn record(port: &mut dyn SerialPort) -> anyhow::Result<()> {
 
         match vedirect::parse(&buf) {
             Ok(result) => {
-                let (p, _remainder) = result;
+                let (p, checksum, _remainder) = result;
                 println!("Got data: {:#?}", &p);
                 // let mapped = vedirect::Bmv700::map_fields(&p)?;
-                let mapped = vedirect::Mppt::map_fields(&p)?;
+                let mapped = vedirect::MpptFrame::map_fields(&p, checksum)?;
                 println!("Mapped data {:#?}", &mapped);
             }
             _ => println!("Parsing failed for BMV-700"),

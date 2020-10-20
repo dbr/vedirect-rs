@@ -1,37 +1,16 @@
 //! Specs for this implementation can be found at https://www.sv-zanshin.com/r/manuals/victron-ve-direct-protocol.pdf
 
-use crate::constants::*;
 use crate::map::Map;
 use crate::parser::Field;
 use crate::types::*;
 use crate::utils::*;
 use crate::ve_error::VeError;
+use crate::{checksum, constants::*};
 use std::collections::hash_map::HashMap;
-
-// PID     0xA053
-// FW      150
-// SER#    HQ9999ABCDE
-// V       12000
-// I       0
-// VPV     10
-// PPV     0
-// CS      0
-// MPPT    0
-// OR      0x00000001
-// ERR     0
-// LOAD    OFF
-// IL      0
-// H19     10206
-// H20     0
-// H21     0
-// H22     2
-// H23     8
-// HSDS    279
-// Checksum        �
 
 /// Support for all MPPT solar charge controllers.
 #[derive(Debug)]
-pub struct Mppt {
+pub struct MpptFrame {
     /// Label: PID, Product ID
     pub pid: VictronProductId,
 
@@ -172,7 +151,7 @@ pub trait VictronProduct {
     fn get_name(&self) -> String;
 }
 
-impl VictronProduct for Mppt {
+impl VictronProduct for MpptFrame {
     fn get_name(&self) -> String {
         match self.pid {
             VictronProductId::BMV700 => "BMV-700".into(),
@@ -227,7 +206,8 @@ impl VictronProduct for Mppt {
     }
 }
 
-impl ToString for Mppt {
+impl ToString for MpptFrame {
+    /// Returns the whole string for the frame except the checksum that is likely not a valid utf8 char
     fn to_string(&self) -> String {
         format!("{pid}{fw}{ser}{v}{i}{vpv}{ppv}{cs}{mppt}{or}{err}{load}{il}{h19}{h20}{h21}{h22}{h23}{hsds}{checksum}",
         pid = get_field_string("PID", Some(format!("0x{:X}", self.pid as u32))),
@@ -254,12 +234,12 @@ impl ToString for Mppt {
         h22 = get_field_string("H22", Some(self.yield_yesterday)),
         h23 = get_field_string("H23", Some(self.max_power_yesterday)),
         hsds = get_field_string("HSDS", Some(self.hsds)),
-        checksum = get_field_string("Checksum", Some(self.checksum)),
+        checksum = format!("\r\nChecksum\t"),
         )
     }
 }
 
-impl Default for Mppt {
+impl Default for MpptFrame {
     fn default() -> Self {
         Self {
             pid: VictronProductId::BlueSolar_MPPT_75_15,
@@ -289,14 +269,14 @@ impl Default for Mppt {
     }
 }
 
-impl Map<Mppt> for Mppt {
-    fn map_fields(fields: &Vec<Field>) -> Result<Self, VeError> {
+impl Map<MpptFrame> for MpptFrame {
+    fn map_fields(fields: &Vec<Field>, checksum: u8) -> Result<Self, VeError> {
         let mut hm: HashMap<&str, &str> = HashMap::new();
         for f in fields {
             hm.insert(f.key, f.value);
         }
 
-        Ok(Mppt {
+        Ok(MpptFrame {
             pid: convert_product_id(&hm, "PID")?,
             firmware: convert_string(&hm, "FW")?,
             serial_number: convert_string(&hm, "SER#")?,
@@ -318,16 +298,26 @@ impl Map<Mppt> for Mppt {
             yield_yesterday: convert_yield(&hm, "H22")?,
             max_power_yesterday: convert_watt(&hm, "H23")?,
             hsds: convert_u32(&hm, "HSDS")? as u16,
-            checksum: convert_u32(&hm, "HSDS")? as u8,
+            checksum,
         })
     }
 }
 
-impl Mppt {
+impl Into<Vec<u8>> for MpptFrame {
+    fn into(self) -> Vec<u8> {
+        let str = self.to_string();
+        let raw = str.as_bytes();
+        let checksum = checksum::calculate(raw);
+        checksum::append(raw, checksum)
+        // [raw.iter().cloned().collect(), vec![checksum]].concat()
+    }
+}
+
+impl MpptFrame {
     /// Creates a new device based on the provided frame.
     pub fn new(frame: &[u8]) -> Result<Self, VeError> {
-        let (raw, _remainder) = crate::parser::parse(frame)?;
-        Mppt::map_fields(&raw)
+        let (raw, checksum, _remainder) = crate::parser::parse(frame)?;
+        MpptFrame::map_fields(&raw, checksum)
     }
 
     /// This ctor is mainly used for some of the tests to prevent having to generate frames.
@@ -384,19 +374,27 @@ mod tests_mppt {
 
     #[test]
     fn test_mppt_to_string() {
-        let mppt = Mppt::default();
+        let mppt = MpptFrame::default();
         let frame = mppt.to_string();
-        let default_frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0";
+        let default_frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t";
         assert_eq!(frame, default_frame);
     }
 
     #[test]
+    fn test_mppt_to_bytes() {
+        let mppt = MpptFrame::default();
+        let bytes: Vec<u8> = mppt.into();
+        let frame_without_checksum = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t".as_bytes();
+        assert_eq!(bytes.split_last().unwrap().1, frame_without_checksum);
+        assert_eq!(bytes.split_last().unwrap().0, &13);
+    }
+
+    #[test]
     fn test_mppt_1() {
-        let mppt = Mppt::default();
-        let frame = mppt.to_string();
-        let sample_frame = frame.as_bytes();
-        let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
-        let device = Mppt::map_fields(&raw).unwrap();
+        let frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t".as_bytes();
+        let frame = &checksum::append(frame, 13);
+        let (fields, checksum, _remainder) = crate::parser::parse(&frame).unwrap();
+        let device = MpptFrame::map_fields(&fields, checksum).unwrap();
 
         assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
         assert_eq!(device.firmware, String::from("150"));
@@ -417,16 +415,17 @@ mod tests_mppt {
         assert_eq!(device.yield_yesterday, 0_f32);
         assert_eq!(device.max_power_yesterday, 0);
         assert_eq!(device.hsds, 0);
-        assert_eq!(device.checksum, 0);
+        assert_eq!(device.checksum, 13);
 
         assert_eq!(device.get_name(), "BlueSolar MPPT 75/15");
     }
 
     #[test]
     fn test_mppt_older_versions() {
-        let sample_frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t0".as_bytes();
-        let (raw, _remainder) = crate::parser::parse(sample_frame).unwrap();
-        let device = Mppt::map_fields(&raw).unwrap();
+        let frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t".as_bytes();
+        let frame = &checksum::append(frame, 13);
+        let (raw, checksum, _remainder) = crate::parser::parse(frame).unwrap();
+        let device = MpptFrame::map_fields(&raw, checksum).unwrap();
 
         assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
         assert_eq!(device.firmware, String::from("150"));
@@ -445,7 +444,7 @@ mod tests_mppt {
         assert_eq!(device.yield_yesterday, 0_f32);
         assert_eq!(device.max_power_yesterday, 0);
         assert_eq!(device.hsds, 0);
-        assert_eq!(device.checksum, 0);
+        assert_eq!(device.checksum, 13);
     }
 
     #[test]
@@ -469,9 +468,10 @@ mod tests_mppt {
             \r\nH22\t4567\
             \r\nH23\t98\
             \r\nHSDS\t0\
-            \r\nChecksum\t0"
+            \r\nChecksum\t"
             .as_bytes();
-        let device = Mppt::new(frame).unwrap();
+        let frame = &checksum::append(&frame, 162);
+        let device = MpptFrame::new(frame).unwrap();
 
         assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
         assert_eq!(device.firmware, String::from("150"));
@@ -492,12 +492,12 @@ mod tests_mppt {
         assert_eq!(device.yield_yesterday, 45.67);
         assert_eq!(device.max_power_yesterday, 98);
         assert_eq!(device.hsds, 0);
-        assert_eq!(device.checksum, 0);
+        assert_eq!(device.checksum, 162);
     }
 
     #[test]
     fn test_mppt_init() {
-        let device = Mppt::init(
+        let device = MpptFrame::init(
             VictronProductId::BlueSolar_MPPT_75_15,
             "420".into(),
             "HQ1328Y6TF6".into(),

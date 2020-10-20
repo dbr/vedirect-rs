@@ -1,5 +1,4 @@
-use crate::ve_error::VeError;
-use modulo::Mod;
+use crate::{checksum, checksum::Checksum, ve_error::VeError};
 
 #[derive(Debug)]
 pub struct Field<'a> {
@@ -7,43 +6,7 @@ pub struct Field<'a> {
     pub value: &'a str,
 }
 
-#[derive(Debug)]
-pub struct Checksum {
-    value: u8,
-}
-
-/// Calculate the TEXT Checksum.
-///
-/// The checksum needs to be calculated from the start (0d) till the end of the frame, excluding the checksum value from the frame (d8).
-/// The checksum is the complement allowing for the frame checksum to be 0x00.
-/// Reference: https://www.victronenergy.com/live/vedirect_protocol:faq#q8how_do_i_calculate_the_text_checksum
-fn calculate_text_checksum(frame: &[u8]) -> Checksum {
-    let mut checksum = 0u8;
-    let message = frame.split_last().unwrap().1;
-
-    message.iter().for_each(|x| {
-        checksum = (checksum.overflowing_add(*x)).0.modulo(255);
-    });
-
-    Checksum {
-        value: 0xff - checksum + 1,
-    }
-}
-
-/// Verify a frame using its checksum. Since the checksum is calculating as complement to have checksum of the frame equal to 0,
-/// we can run the same checksum algorithm and check that the checksum is 0.
-fn verify_text_checksum(frame: &[u8]) -> bool {
-    let mut checksum = 0u8;
-    let message = frame;
-
-    message.iter().for_each(|x| {
-        checksum = (checksum.overflowing_add(*x)).0.modulo(255);
-    });
-
-    checksum == 0
-}
-
-/// Parse binary protocol using nom
+/// Parse TEXT protocol using nom
 fn rawparse(data: &[u8]) -> nom::IResult<&[u8], (Vec<Field>, Checksum)> {
     use nom::bytes::streaming::tag;
     use nom::bytes::streaming::take_until;
@@ -80,13 +43,14 @@ fn rawparse(data: &[u8]) -> nom::IResult<&[u8], (Vec<Field>, Checksum)> {
         })(input);
         f
     }
+
     fn checksum(input: &[u8]) -> IResult<&[u8], Checksum> {
         // "Checksum" <tab> <checksum byte>
         let parsed = pair(
             tag("\r\n"),
             separated_pair(tag("Checksum"), char('\t'), anychar),
         );
-        map(parsed, |(_nl, d)| Checksum { value: d.1 as u8 })(input)
+        map(parsed, |(_nl, d)| d.1 as Checksum)(input)
     }
 
     /// A chunk is a set of fields (at east one) terminated by a checksum.
@@ -95,14 +59,11 @@ fn rawparse(data: &[u8]) -> nom::IResult<&[u8], (Vec<Field>, Checksum)> {
         pair(many1(line), checksum)(input)
     }
 
-    // fn frame(input: &[u8]) -> IResult<&[u8], (Vec<Field>, Checksum)> {
-
-    // }
     chunk(data)
 }
 
-pub fn parse(data: &[u8]) -> Result<(Vec<Field>, &[u8]), VeError> {
-    let (data, remainder) = match rawparse(data) {
+pub fn parse(data: &[u8]) -> Result<(Vec<Field>, u8, &[u8]), VeError> {
+    let (parsed, remainder) = match rawparse(data) {
         Err(nom::Err::Error(e)) => Err(VeError::Parse(format!(
             "Parse error: {:?} - remaining data: {:?}",
             e.1,
@@ -113,10 +74,71 @@ pub fn parse(data: &[u8]) -> Result<(Vec<Field>, &[u8]), VeError> {
             "Unknown error while parsing: {}",
             e
         ))),
-        Ok((remainder, data)) => Ok((data, remainder)),
+        Ok((remainder, parsed)) => Ok((parsed, remainder)),
     }?;
-    let (fields, _checksum) = data;
-    Ok((fields, &remainder))
+
+    let (fields, checksum) = parsed;
+
+    // println!("DBG: fields: {:?}   checksum:{}", fields, checksum);
+    // println!("DBG: remainder: {:?}", remainder);
+    let (data, _left) = data.split_at(data.len() - remainder.len());
+    // println!("DBG: data: {:?}", data);
+
+    match checksum::calculate_for_frame(data) {
+        _x if _x == checksum => Ok((fields, checksum, &remainder)),
+        bad_checksum => Err(VeError::Parse(format!(
+            "Invalid checksum. Expected {}, got {}. The frame is {:?}",
+            bad_checksum, checksum, data
+        ))),
+    }
+}
+
+/// Returns the index of the first `\r\n` to detect what could be the start of a frame
+fn find_start(data: &[u8]) -> Option<usize> {
+    let mut previous: Option<&u8> = None;
+    let mut index = 0;
+    let mut res: Option<usize> = None;
+
+    for c in data.iter() {
+        if previous == Some(&13) && c == &10 {
+            res = Some(index - 1);
+            break;
+        }
+
+        previous = Some(c);
+        index += 1;
+    }
+    res
+}
+
+/// Truncate some data to ensure we start at the beginning of a frame.
+/// it basically finds the next '\r\n'
+fn truncate(data: &[u8]) -> (&[u8], usize) {
+    let start = find_start(data);
+    println!("Start: {:?}", start);
+    match start {
+        None => (data, 0),
+        Some(i) => (&data[i..], i),
+    }
+}
+
+/// This function allows finding a valid frame if any is present.
+/// If a valid frame (=with a valid checksum) is found, the indexes of start and end in the slice are returned.
+pub fn find_frame(data: &[u8]) -> Option<(usize, usize)> {
+    // First we truncate the data as needed to make sure we start from a point that could be a valid frame
+    let (truncated, start) = truncate(data);
+
+    // From there, we attempt to parse the data
+    let parser_result = parse(truncated);
+
+    // If the parser found something, we dig further
+    match parser_result {
+        Err(_e) => None,
+        Ok((_fields, _checksum, remainder)) if remainder.len() == 0 => {
+            Some((start, data.len() - start))
+        }
+        Ok((_fields, _checksum, remainder)) => Some((start, data.len() - remainder.len() - start)),
+    }
 }
 
 #[cfg(test)]
@@ -125,8 +147,8 @@ mod tests_parser {
 
     #[test]
     fn test_parse_line() {
-        let data = "\r\nfield1\tvalue1\r\nfield2\tvalue2\r\nChecksum\t4".as_bytes();
-        let (data, _remaining) = parse(data).unwrap();
+        let data = "\r\nfield1\tvalue1\r\nfield2\tvalue2\r\nChecksum\te".as_bytes();
+        let (data, _checksum, _remaining) = parse(data).unwrap();
         assert_eq!(data.len(), 2);
         assert_eq!(data[0].key, "field1");
         assert_eq!(data[0].value, "value1");
@@ -136,20 +158,23 @@ mod tests_parser {
 
     #[test]
     fn test_parse_serial() {
-        let data = "\r\nSER#\tABC123\r\nChecksum\t4".as_bytes();
-        let (data, _remaining) = parse(data).unwrap();
-        assert_eq!(data.len(), 1);
-        assert_eq!(data[0].key, "SER#");
-        assert_eq!(data[0].value, "ABC123");
+        let frame = "\r\nSER#\tABC123\r\nChecksum\t".as_bytes();
+        let frame = checksum::append(frame, 36);
+
+        let (fields, _checksum, _remaining) = parse(&frame).unwrap();
+        assert_eq!(fields.len(), 1);
+        assert_eq!(fields[0].key, "SER#");
+        assert_eq!(fields[0].value, "ABC123");
     }
 
     #[test]
     fn test_parse_hex() {
-        let data = "\r\nPID\t0x1234\r\nChecksum\t4".as_bytes();
-        let (data, _remaining) = parse(data).unwrap();
-        assert_eq!(data.len(), 1);
-        assert_eq!(data[0].key, "PID");
-        assert_eq!(data[0].value, "0x1234");
+        let frame = "\r\nPID\t0x1234\r\nChecksum\t".as_bytes();
+        let frame = checksum::append(frame, 62);
+        let (fields, _checksum, _remaining) = parse(&frame).unwrap();
+        assert_eq!(fields.len(), 1);
+        assert_eq!(fields[0].key, "PID");
+        assert_eq!(fields[0].value, "0x1234");
     }
 
     #[test]
@@ -166,7 +191,7 @@ mod tests_parser {
         while data.len() > 0 {
             let res = parse(&data);
             match res {
-                Ok((parsed, remainder)) => {
+                Ok((parsed, _checksum, remainder)) => {
                     alldata.push(parsed);
                     data = remainder;
                 }
@@ -188,66 +213,78 @@ mod tests_parser {
 }
 
 #[cfg(test)]
-mod tests_checksum {
+mod test_frame_finder {
     use super::*;
 
     #[test]
-    fn test_calculate_text_checksum_short() {
+    fn test_findstart_none() {
+        assert_eq!(find_start("f1\tv1\n\rf2".as_bytes()), None);
+    }
+
+    #[test]
+    fn test_findstart_some_0() {
+        assert_eq!(find_start("\r\nf1\tv1\r\nf2".as_bytes()), Some(0));
+    }
+
+    #[test]
+    fn test_findstart_some() {
+        assert_eq!(
+            find_start("foo\rbar\nfb\r\nf1\tv1\r\nf2\tv2".as_bytes()),
+            Some(10)
+        );
+    }
+
+    #[test]
+    fn test_truncate_nothing() {
+        let frame = "\r\nfield1\tvalue1\r\nfield2\tvalue2\r\nChecksum\te".as_bytes();
+        assert_eq!(truncate(frame), (frame, 0));
+    }
+
+    #[test]
+    fn test_truncate_some() {
+        let frame =
+            "some\rjunk\nfoobar\r\nfield1\tvalue1\r\nfield2\tvalue2\r\nChecksum\te".as_bytes();
+        let truncated = truncate(frame);
+        assert_eq!(
+            truncated,
+            (
+                "\r\nfield1\tvalue1\r\nfield2\tvalue2\r\nChecksum\te".as_bytes(),
+                16
+            )
+        );
+    }
+
+    #[test]
+    fn test_find_frame_noframe() {
         let frame = vec![0x0d, 0x0a, 0xd8];
-        let checksum = calculate_text_checksum(&frame);
-        assert_eq!(checksum.value, 0xe9);
+        let result = find_frame(&frame);
+        assert_eq!(result, None);
     }
 
     #[test]
-    fn test_calculate_text_checksum_short2() {
-        let frame = vec![0x0d, 0x0a, 0x7f, 0x7f, 0xd8];
-        let checksum = calculate_text_checksum(&frame);
-        assert_eq!(checksum.value, 0xeb);
+    fn test_find_frame_only_frame() {
+        let frame = "\r\nfield1\tvalue1\r\nfield2\tvalue2\r\nChecksum\te".as_bytes();
+        assert_eq!(find_frame(&frame), Some((0, 42)));
     }
 
     #[test]
-    fn test_calculate_text_checksum_real() {
-        let frame = vec![
-            0x0d, 0x0a, 0x50, 0x49, 0x44, 0x09, 0x30, 0x78, 0x32, 0x30, 0x33, 0x0d, 0x0a, 0x56,
-            0x09, 0x32, 0x36, 0x32, 0x30, 0x31, 0x0d, 0x0a, 0x49, 0x09, 0x30, 0x0d, 0x0a, 0x50,
-            0x09, 0x30, 0x0d, 0x0a, 0x43, 0x45, 0x09, 0x30, 0x0d, 0x0a, 0x53, 0x4f, 0x43, 0x09,
-            0x31, 0x30, 0x30, 0x30, 0x0d, 0x0a, 0x54, 0x54, 0x47, 0x09, 0x2d, 0x31, 0x0d, 0x0a,
-            0x41, 0x6c, 0x61, 0x72, 0x6d, 0x09, 0x4f, 0x46, 0x46, 0x0d, 0x0a, 0x52, 0x65, 0x6c,
-            0x61, 0x79, 0x09, 0x4f, 0x46, 0x46, 0x0d, 0x0a, 0x41, 0x52, 0x09, 0x30, 0x0d, 0x0a,
-            0x42, 0x4d, 0x56, 0x09, 0x37, 0x30, 0x30, 0x0d, 0x0a, 0x46, 0x57, 0x09, 0x30, 0x33,
-            0x30, 0x37, 0x0d, 0x0a, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x73, 0x75, 0x6d, 0x09, 0xd8,
-        ];
-        let checksum = calculate_text_checksum(&frame);
-        assert_eq!(checksum.value, 0xd8);
+    fn test_find_frame_junk_then_frame() {
+        let frame = "ksum\tf\r\nfield1\tvalue1\r\nfield2\tvalue2\r\nChecksum\te".as_bytes();
+        let result = find_frame(&frame);
+        assert_eq!(result, Some((6, 42)));
     }
 
     #[test]
-    fn test_verify_text_checksum_real() {
-        let frame = vec![
-            0x0d, 0x0a, 0x50, 0x49, 0x44, 0x09, 0x30, 0x78, 0x32, 0x30, 0x33, 0x0d, 0x0a, 0x56,
-            0x09, 0x32, 0x36, 0x32, 0x30, 0x31, 0x0d, 0x0a, 0x49, 0x09, 0x30, 0x0d, 0x0a, 0x50,
-            0x09, 0x30, 0x0d, 0x0a, 0x43, 0x45, 0x09, 0x30, 0x0d, 0x0a, 0x53, 0x4f, 0x43, 0x09,
-            0x31, 0x30, 0x30, 0x30, 0x0d, 0x0a, 0x54, 0x54, 0x47, 0x09, 0x2d, 0x31, 0x0d, 0x0a,
-            0x41, 0x6c, 0x61, 0x72, 0x6d, 0x09, 0x4f, 0x46, 0x46, 0x0d, 0x0a, 0x52, 0x65, 0x6c,
-            0x61, 0x79, 0x09, 0x4f, 0x46, 0x46, 0x0d, 0x0a, 0x41, 0x52, 0x09, 0x30, 0x0d, 0x0a,
-            0x42, 0x4d, 0x56, 0x09, 0x37, 0x30, 0x30, 0x0d, 0x0a, 0x46, 0x57, 0x09, 0x30, 0x33,
-            0x30, 0x37, 0x0d, 0x0a, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x73, 0x75, 0x6d, 0x09, 0xd8,
-        ];
-        assert_eq!(verify_text_checksum(&frame), true);
+    fn test_find_frame_frame_then_junk() {
+        let frame = "\r\nfield1\tvalue1\r\nfield2\tvalue2\r\nChecksum\te\r\nfiel".as_bytes();
+        let result = find_frame(&frame);
+        assert_eq!(result, Some((0, 42)));
     }
 
     #[test]
-    fn test_verify_text_checksum_real_error() {
-        let frame = vec![
-            0x0d, 0x0a, 0x50, 0x49, 0x44, 0x09, 0x30, 0x78, 0x32, 0x30, 0x33, 0x0d, 0x0a, 0x56,
-            0x09, 0x32, 0x36, 0x32, 0x30, 0x31, 0x0d, 0x0a, 0x49, 0x09, 0x30, 0x0d, 0x0a, 0x50,
-            0x09, 0x30, 0x0d, 0x0a, 0x43, 0x45, 0x09, 0x30, 0x0d, 0x0a, 0x53, 0x4f, 0x43, 0x09,
-            0x31, 0x30, 0x30, 0x30, 0x0d, 0x0a, 0x54, 0x54, 0x47, 0x09, 0x2d, 0x31, 0x0d, 0x0a,
-            0x41, 0x6c, 0x61, 0x72, 0x6d, 0x09, 0x4f, 0x46, 0x46, 0x0d, 0x0a, 0x52, 0x65, 0x6c,
-            0x61, 0x79, 0x09, 0x4f, 0x46, 0x46, 0x0d, 0x0a, 0x41, 0x52, 0x09, 0x30, 0x0d, 0x0a,
-            0x42, 0x4d, 0x56, 0x09, 0x37, 0x30, 0x30, 0x0d, 0x0a, 0x46, 0x57, 0x09, 0x30, 0x33,
-            0x30, 0x37, 0x0d, 0x0a, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x73, 0x75, 0x6d, 0x09, 0xff,
-        ];
-        assert_eq!(verify_text_checksum(&frame), false);
+    fn test_find_frame_burried_frame() {
+        let frame = "ksum\tf\r\nfield1\tvalue1\r\nfield2\tvalue2\r\nChecksum\te\r\nfiel".as_bytes();
+        let result = find_frame(&frame);
+        assert_eq!(result, Some((6, 42)));
     }
 }
