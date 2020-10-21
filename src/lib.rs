@@ -8,6 +8,7 @@ mod constants;
 mod frames;
 mod map;
 mod parser;
+mod serial_number;
 mod types;
 mod utils;
 mod ve_error;

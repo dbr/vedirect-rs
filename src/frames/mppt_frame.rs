@@ -1,14 +1,14 @@
 //! Specs for this implementation can be found at https://www.sv-zanshin.com/r/manuals/victron-ve-direct-protocol.pdf
 
-use crate::map::Map;
 use crate::parser::Field;
 use crate::types::*;
 use crate::utils::*;
 use crate::ve_error::VeError;
 use crate::{checksum, constants::*};
-use std::collections::hash_map::HashMap;
+use crate::{map::Map, serial_number::SerialNumber};
+use std::{collections::hash_map::HashMap, str::FromStr};
 
-/// Support for all MPPT solar charge controllers.
+/// MPPT solar charge controllers Frame definition.
 #[derive(Debug)]
 pub struct MpptFrame {
     /// Label: PID, Product ID
@@ -19,11 +19,11 @@ pub struct MpptFrame {
 
     /// The serial number of the device. The notation is LLYYMMSSSSS, where LL=location code,
     /// YYWW=production datestamp (year, week) and SSSSS=unique part of the serial number.
-    /// Example: HQ1328Y6TF6
+    /// Example: HQ1328A1B2C
     ///
     /// Specs:
     /// - Frame Label: SER#
-    pub serial_number: String,
+    pub serial_number: SerialNumber,
 
     /// Main (battery) voltage.
     ///
@@ -244,7 +244,7 @@ impl Default for MpptFrame {
         Self {
             pid: VictronProductId::BlueSolar_MPPT_75_15,
             firmware: "150".into(),
-            serial_number: "HQ1328Y6TF6".into(),
+            serial_number: SerialNumber::from_str("HQ1328A1B2C").unwrap(),
             voltage: 0.0,
             current: 0.0,
             vpv: 0.0,
@@ -276,10 +276,11 @@ impl Map<MpptFrame> for MpptFrame {
             hm.insert(f.key, f.value);
         }
 
+        let sn = convert_string(&hm, "SER#").unwrap();
         Ok(MpptFrame {
             pid: convert_product_id(&hm, "PID")?,
             firmware: convert_string(&hm, "FW")?,
-            serial_number: convert_string(&hm, "SER#")?,
+            serial_number: SerialNumber::from_str(&sn).unwrap(),
             voltage: convert_f32(&hm, "V")? / 1000_f32,
             current: convert_f32(&hm, "I")? / 1000_f32,
             vpv: convert_f32(&hm, "VPV")? / 1000_f32,
@@ -290,7 +291,7 @@ impl Map<MpptFrame> for MpptFrame {
             error: convert_err(&hm, "ERR")?,
 
             load: convert_load(&hm, "LOAD")?,
-            load_current: convert_load_current(&hm, "IL")?, // TODO: fix that
+            load_current: convert_load_current(&hm, "IL")?,
 
             yield_total: convert_yield(&hm, "H19")?,
             yield_today: convert_yield(&hm, "H20")?,
@@ -324,7 +325,7 @@ impl MpptFrame {
     pub fn init(
         pid: VictronProductId,
         firmware: String,
-        serial_number: String,
+        serial_number: SerialNumber,
         voltage: Volt,
         current: Current,
         vpv: Volt,
@@ -376,7 +377,7 @@ mod tests_mppt {
     fn test_mppt_to_string() {
         let mppt = MpptFrame::default();
         let frame = mppt.to_string();
-        let default_frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t";
+        let default_frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328A1B2C\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t";
         assert_eq!(frame, default_frame);
     }
 
@@ -384,21 +385,24 @@ mod tests_mppt {
     fn test_mppt_to_bytes() {
         let mppt = MpptFrame::default();
         let bytes: Vec<u8> = mppt.into();
-        let frame_without_checksum = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t".as_bytes();
+        let frame_without_checksum = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328A1B2C\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t".as_bytes();
         assert_eq!(bytes.split_last().unwrap().1, frame_without_checksum);
-        assert_eq!(bytes.split_last().unwrap().0, &13);
+        assert_eq!(bytes.split_last().unwrap().0, &68);
     }
 
     #[test]
     fn test_mppt_1() {
-        let frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t".as_bytes();
-        let frame = &checksum::append(frame, 13);
+        let frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328A1B2C\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t".as_bytes();
+        let frame = &checksum::append(frame, 68);
         let (fields, checksum, _remainder) = crate::parser::parse(&frame).unwrap();
         let device = MpptFrame::map_fields(&fields, checksum).unwrap();
 
         assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
         assert_eq!(device.firmware, String::from("150"));
-        assert_eq!(device.serial_number, "HQ1328Y6TF6");
+        assert_eq!(
+            device.serial_number,
+            SerialNumber::from_str("HQ1328A1B2C").unwrap()
+        );
         assert_eq!(device.voltage, 0.0);
         assert_eq!(device.current, 0.0);
         assert_eq!(device.load, None);
@@ -415,21 +419,24 @@ mod tests_mppt {
         assert_eq!(device.yield_yesterday, 0_f32);
         assert_eq!(device.max_power_yesterday, 0);
         assert_eq!(device.hsds, 0);
-        assert_eq!(device.checksum, 13);
+        assert_eq!(device.checksum, 68);
 
         assert_eq!(device.get_name(), "BlueSolar MPPT 75/15");
     }
 
     #[test]
     fn test_mppt_older_versions() {
-        let frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328Y6TF6\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t".as_bytes();
-        let frame = &checksum::append(frame, 13);
+        let frame = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328A1B2C\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t".as_bytes();
+        let frame = &checksum::append(frame, 68);
         let (raw, checksum, _remainder) = crate::parser::parse(frame).unwrap();
         let device = MpptFrame::map_fields(&raw, checksum).unwrap();
 
         assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
         assert_eq!(device.firmware, String::from("150"));
-        assert_eq!(device.serial_number, "HQ1328Y6TF6");
+        assert_eq!(
+            device.serial_number,
+            SerialNumber::from_str("HQ1328A1B2C").unwrap()
+        );
         assert_eq!(device.voltage, 0.0);
         assert_eq!(device.current, 0.0);
         assert_eq!(device.vpv, 0.0);
@@ -444,14 +451,14 @@ mod tests_mppt {
         assert_eq!(device.yield_yesterday, 0_f32);
         assert_eq!(device.max_power_yesterday, 0);
         assert_eq!(device.hsds, 0);
-        assert_eq!(device.checksum, 13);
+        assert_eq!(device.checksum, 68);
     }
 
     #[test]
     fn test_mppt_new() {
         let frame = "\r\nPID\t0xA042\
             \r\nFW\t150\
-            \r\nSER#\tHQ1328Y6TF6\
+            \r\nSER#\tHQ1328A1B2C\
             \r\nV\t12340\
             \r\nI\t1230\
             \r\nVPV\t36630\
@@ -470,12 +477,15 @@ mod tests_mppt {
             \r\nHSDS\t0\
             \r\nChecksum\t"
             .as_bytes();
-        let frame = &checksum::append(&frame, 162);
+        let frame = &checksum::append(&frame, 217);
         let device = MpptFrame::new(frame).unwrap();
 
         assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
         assert_eq!(device.firmware, String::from("150"));
-        assert_eq!(device.serial_number, "HQ1328Y6TF6");
+        assert_eq!(
+            device.serial_number,
+            SerialNumber::from_str("HQ1328A1B2C").unwrap()
+        );
         assert_eq!(device.voltage, 12.34);
         assert_eq!(device.current, 1.23);
         assert_eq!(device.vpv, 36.63);
@@ -492,7 +502,7 @@ mod tests_mppt {
         assert_eq!(device.yield_yesterday, 45.67);
         assert_eq!(device.max_power_yesterday, 98);
         assert_eq!(device.hsds, 0);
-        assert_eq!(device.checksum, 162);
+        assert_eq!(device.checksum, 217);
     }
 
     #[test]
@@ -500,7 +510,7 @@ mod tests_mppt {
         let device = MpptFrame::init(
             VictronProductId::BlueSolar_MPPT_75_15,
             "420".into(),
-            "HQ1328Y6TF6".into(),
+            SerialNumber::from_str("HQ1328A1B2C").unwrap(),
             12.34,
             1.23,
             36.63,
@@ -522,7 +532,10 @@ mod tests_mppt {
 
         assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
         assert_eq!(device.firmware, String::from("420"));
-        assert_eq!(device.serial_number, "HQ1328Y6TF6");
+        assert_eq!(
+            device.serial_number,
+            SerialNumber::from_str("HQ1328A1B2C").unwrap()
+        );
         assert_eq!(device.voltage, 12.34);
         assert_eq!(device.current, 1.23);
         assert_eq!(device.vpv, 36.63);

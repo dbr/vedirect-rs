@@ -1,5 +1,8 @@
 use modulo::Mod;
 
+use crate::types::*;
+
+// TODO: Clean that up
 // #[derive(Debug)]
 // pub struct Checksum {
 //     pub(crate) value: u8,
@@ -8,7 +11,7 @@ use modulo::Mod;
 pub type Checksum = u8;
 
 /// Calculate the checksum of some data
-pub fn calculate(data: &[u8]) -> Checksum {
+pub fn calculate(data: &DataBytes<u8>) -> Checksum {
     let mut checksum = 0u8;
 
     data.iter().for_each(|x| {
@@ -16,7 +19,6 @@ pub fn calculate(data: &[u8]) -> Checksum {
     });
 
     0xff_u8.overflowing_sub(checksum).0.overflowing_add(1).0
-    // 0xff - checksum + 1
 }
 
 /// Calculate the TEXT Checksum of a frame, ignoring its current checksum.
@@ -24,7 +26,7 @@ pub fn calculate(data: &[u8]) -> Checksum {
 /// The checksum needs to be calculated from the start (0d) till the end of the frame, excluding the checksum value from the frame (d8).
 /// The checksum is the complement allowing for the frame checksum to be 0x00.
 /// Reference: https://www.victronenergy.com/live/vedirect_protocol:faq#q8how_do_i_calculate_the_text_checksum
-pub fn calculate_for_frame(frame: &[u8]) -> Checksum {
+pub fn calculate_for_frame(frame: &FrameBytes<u8>) -> Checksum {
     let mut checksum = 0u8;
     let message = frame.split_last().unwrap().1;
 
@@ -35,13 +37,13 @@ pub fn calculate_for_frame(frame: &[u8]) -> Checksum {
     0xff - checksum + 1
 }
 
-pub fn append(data: &[u8], checksum: u8) -> Vec<u8> {
+pub fn append(data: &FrameBytes<u8>, checksum: Checksum) -> Vec<u8> {
     [data, &vec![checksum]].concat()
 }
 
 /// Verify a frame using its checksum. Since the checksum is calculating as complement to have checksum of the frame equal to 0,
 /// we can run the same checksum algorithm and check that the checksum is 0.
-pub fn verify(frame: &[u8]) -> bool {
+pub fn verify(frame: &FrameBytes<u8>) -> bool {
     calculate(frame) == 0
 }
 

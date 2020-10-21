@@ -34,9 +34,9 @@ Early development.
 
 - [x] Initial protocol parser
 - [x] Initial mapping of most useful BMV 700 fields
-- [ ] More complete testing of parser
+- [x] More complete testing of parser
 - [ ] Mapping of all fields of BMV
-- [ ] Mapping of all fields for MPPT
+- [x] Mapping of all fields for MPPT
 - [ ] Mapping of all fields for inverters
 
 ## Run examples
