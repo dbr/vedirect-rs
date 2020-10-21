@@ -2,7 +2,12 @@ use crate::constants::*;
 use crate::types::*;
 use crate::ve_error::VeError;
 use num_traits::FromPrimitive;
-use std::{collections::hash_map::HashMap, fmt::Display};
+use std::{
+    collections::hash_map::HashMap,
+    fmt::{Debug, Display},
+};
+
+// TODO: all those convert functions should be one or more impl of a struct holding the rawkeys
 
 // TODO: Lots of duplicate code here, we probably can do better. See function below.
 // pub fn convert_number<T: FromStr + Debug>(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<T, VeError> {
@@ -93,20 +98,33 @@ pub fn convert_err(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Err, Ve
     }
 }
 
-pub fn convert_charge_state(
-    rawkeys: &HashMap<&str, &str>,
-    label: &str,
-) -> Result<ChargeState, VeError> {
+/// This function tries itS best to convert:
+/// - "0" or "7", "15" in to 0, 7 or 15
+/// - "0x00000001" into 1 and "0x00000100" into 256
+/// and then match with an element of the enum T
+pub fn convert_enum<T>(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<T, VeError>
+where
+    T: FromPrimitive + Debug,
+{
     let raw = (*rawkeys)
         .get(label)
         .ok_or(VeError::MissingField(label.into()))?;
-    let cleaned = raw.parse::<i32>()?;
-    let cs = FromPrimitive::from_i32(cleaned);
 
-    match cs {
+    let cleaned = match raw.contains("0x") {
+        true => {
+            let raw = &raw.replace("0x", "");
+            u32::from_str_radix(raw, 16)
+        }
+        false => raw.parse::<u32>(),
+    };
+
+    let index = cleaned.unwrap();
+    let hit = FromPrimitive::from_u32(index);
+
+    match hit {
         Some(x) => Ok(x),
         None => Err(VeError::Parse(format!(
-            "Error parsing integer into ChargeState: {}",
+            "Error parsing integer into T: {}",
             raw
         ))),
     }
@@ -191,5 +209,29 @@ mod tests_utils {
     #[test]
     fn test_get_field_string_none() {
         assert_eq!(get_field_string::<u32>("ABC", None), "");
+    }
+
+    #[test]
+    fn test_get_or_field_0x00000001() {
+        assert_eq!(
+            convert_enum::<OffReason>(&seq!(("OR", "0x00000001")), "OR").unwrap(),
+            OffReason::NoInputPower
+        );
+    }
+
+    #[test]
+    fn test_get_or_field_0x00000100() {
+        assert_eq!(
+            convert_enum::<OffReason>(&seq!(("OR", "0x00000100")), "OR").unwrap(),
+            OffReason::AnalysingInputVoltage
+        );
+    }
+
+    #[test]
+    fn test_get_mppt_field_1() {
+        assert_eq!(
+            convert_enum::<MpptOperationState>(&seq!(("MPPT", "1")), "MPPT").unwrap(),
+            MpptOperationState::VoltageOrCurrentLimited
+        );
     }
 }

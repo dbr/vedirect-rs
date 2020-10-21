@@ -109,3 +109,35 @@ impl Display for Err {
         write!(f, "{:?}", self)
     }
 }
+
+#[derive(Debug, FromPrimitive, Copy, Clone, PartialEq)]
+pub enum OffReason {
+    NoInputPower = 0x00000001,
+    SwitchedOffFromPower = 0x00000002,
+    SwitchedOffFromRegister = 0x00000004,
+    RemoteInput = 0x00000008,
+    ProtectionActive = 0x00000010,
+    Paygo = 0x00000020,
+    BMS = 0x00000040,
+    EngineShutdownDetection = 0x00000080,
+    AnalysingInputVoltage = 0x00000100,
+}
+
+impl Display for OffReason {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+#[derive(Debug, FromPrimitive, Copy, Clone, PartialEq)]
+pub enum MpptOperationState {
+    Off = 0,
+    VoltageOrCurrentLimited = 1,
+    MppTrackerActive = 2,
+}
+
+impl Display for MpptOperationState {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}

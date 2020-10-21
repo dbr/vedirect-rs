@@ -1,14 +1,5 @@
-use modulo::Mod;
-
 use crate::types::*;
-
-// TODO: Clean that up
-// #[derive(Debug)]
-// pub struct Checksum {
-//     pub(crate) value: u8,
-// }
-
-pub type Checksum = u8;
+use modulo::Mod;
 
 /// Calculate the checksum of some data
 pub fn calculate(data: &DataBytes<u8>) -> Checksum {

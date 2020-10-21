@@ -20,3 +20,5 @@ pub type FrameBytes<T> = [T];
 
 /// See also [FrameBytes].
 pub type DataBytes<T> = [T];
+
+pub type Checksum = u8;

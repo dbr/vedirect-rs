@@ -1,4 +1,4 @@
-use crate::{checksum, checksum::Checksum, ve_error::VeError};
+use crate::{checksum, types::Checksum, ve_error::VeError};
 
 #[derive(Debug)]
 pub struct Field<'a> {

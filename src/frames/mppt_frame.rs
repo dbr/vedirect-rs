@@ -63,13 +63,15 @@ pub struct MpptFrame {
     /// - Frame Label: CS
     pub charge_state: ChargeState,
 
-    // TODO: check what MPPT is
-    /// Label: MPPT, Unsure what this is so catching it as String for now
-    pub mppt: String,
+    // Tracker operation state
+    /// Label: MPPT
+    /// See [MpptOperationState]
+    pub mppt: MpptOperationState,
 
-    // TODO: check what OR is
-    /// Label: OR, Unsure what this is so catching it as String for now
-    pub or: String,
+    // Off reason, this field described why a unit is switched off.
+    /// Label: OR
+    /// See [OffReason]
+    pub off_reason: OffReason,
 
     /// Error code    
     ///
@@ -218,8 +220,8 @@ impl ToString for MpptFrame {
         vpv= get_field_string("VPV", Some(self.vpv)),
         ppv = get_field_string("PPV", Some(self.ppv)),
         cs = get_field_string("CS", Some(self.charge_state as u32)),
-        mppt= get_field_string("MPPT", Some(&self.mppt)),
-        or = get_field_string("OR", Some(&self.or)),
+        mppt= get_field_string("MPPT", Some(self.mppt as u32)),
+        or = get_field_string("OR", Some( format!("0x{:08x}", self.off_reason as u32))),
         err = get_field_string("ERR", Some(self.error as u32)),
 
         load = get_field_string("LOAD", match self.load {
@@ -250,8 +252,8 @@ impl Default for MpptFrame {
             vpv: 0.0,
             ppv: 0,
             charge_state: ChargeState::Off,
-            mppt: "0".into(),
-            or: "0x00000001".into(),
+            mppt: MpptOperationState::Off,
+            off_reason: OffReason::NoInputPower,
 
             yield_total: 0_f32,
             yield_today: 0_f32,
@@ -276,7 +278,12 @@ impl Map<MpptFrame> for MpptFrame {
             hm.insert(f.key, f.value);
         }
 
+        println!("ALIVE");
+        println!("{}: {:#?} ", checksum, fields);
+
         let sn = convert_string(&hm, "SER#").unwrap();
+        println!("ALIVE1");
+
         Ok(MpptFrame {
             pid: convert_product_id(&hm, "PID")?,
             firmware: convert_string(&hm, "FW")?,
@@ -285,9 +292,9 @@ impl Map<MpptFrame> for MpptFrame {
             current: convert_f32(&hm, "I")? / 1000_f32,
             vpv: convert_f32(&hm, "VPV")? / 1000_f32,
             ppv: convert_watt(&hm, "PPV")?,
-            charge_state: convert_charge_state(&hm, "CS")?,
-            mppt: convert_string(&hm, "MPPT")?,
-            or: convert_string(&hm, "OR")?,
+            charge_state: convert_enum::<ChargeState>(&hm, "CS")?,
+            mppt: convert_enum::<MpptOperationState>(&hm, "MPPT")?,
+            off_reason: convert_enum::<OffReason>(&hm, "OR")?,
             error: convert_err(&hm, "ERR")?,
 
             load: convert_load(&hm, "LOAD")?,
@@ -331,8 +338,8 @@ impl MpptFrame {
         vpv: Volt,
         ppv: Watt,
         charge_state: ChargeState,
-        mppt: String,
-        or: String,
+        mppt: MpptOperationState,
+        off_reason: OffReason,
         error: Err,
         load: Option<bool>,
         load_current: Option<Current>,
@@ -354,7 +361,7 @@ impl MpptFrame {
             ppv,
             charge_state,
             mppt,
-            or,
+            off_reason,
             error,
             load,
             load_current,
@@ -410,8 +417,8 @@ mod tests_mppt {
         assert_eq!(device.vpv, 0.0);
         assert_eq!(device.ppv, 0);
         assert_eq!(device.charge_state, ChargeState::Off);
-        assert_eq!(device.mppt, "0");
-        assert_eq!(device.or, "0x00000001");
+        assert_eq!(device.mppt, MpptOperationState::Off);
+        assert_eq!(device.off_reason, OffReason::NoInputPower);
         assert_eq!(device.error, Err::NoError);
         assert_eq!(device.yield_total, 0_f32);
         assert_eq!(device.yield_today, 0_f32);
@@ -442,8 +449,8 @@ mod tests_mppt {
         assert_eq!(device.vpv, 0.0);
         assert_eq!(device.ppv, 0);
         assert_eq!(device.charge_state, ChargeState::Off);
-        assert_eq!(device.mppt, "0");
-        assert_eq!(device.or, "0x00000001");
+        assert_eq!(device.mppt, MpptOperationState::Off);
+        assert_eq!(device.off_reason, OffReason::NoInputPower);
         assert_eq!(device.error, Err::NoError);
         assert_eq!(device.yield_total, 0_f32);
         assert_eq!(device.yield_today, 0_f32);
@@ -493,8 +500,8 @@ mod tests_mppt {
         assert_eq!(device.load, Some(true));
         assert_eq!(device.load_current, Some(5.43));
         assert_eq!(device.charge_state, ChargeState::Off);
-        assert_eq!(device.mppt, "0");
-        assert_eq!(device.or, "0x00000001");
+        assert_eq!(device.mppt, MpptOperationState::Off);
+        assert_eq!(device.off_reason, OffReason::NoInputPower);
         assert_eq!(device.error, Err::TerminalsOverheated);
         assert_eq!(device.yield_total, 12.34);
         assert_eq!(device.yield_today, 23.45);
@@ -516,8 +523,8 @@ mod tests_mppt {
             36.63,
             99,
             ChargeState::Float,
-            "8".into(),
-            "0x12345678".into(),
+            MpptOperationState::VoltageOrCurrentLimited,
+            OffReason::ProtectionActive,
             Err::SolarInputCurrentTooHigh,
             Some(true),
             Some(17.45),
@@ -541,8 +548,8 @@ mod tests_mppt {
         assert_eq!(device.vpv, 36.63);
         assert_eq!(device.ppv, 99);
         assert_eq!(device.charge_state, ChargeState::Float);
-        assert_eq!(device.mppt, "8");
-        assert_eq!(device.or, "0x12345678");
+        assert_eq!(device.mppt, MpptOperationState::VoltageOrCurrentLimited);
+        assert_eq!(device.off_reason, OffReason::ProtectionActive);
         assert_eq!(device.error, Err::SolarInputCurrentTooHigh);
         assert_eq!(device.yield_total, 10000_f32);
         assert_eq!(device.yield_today, 500_f32);

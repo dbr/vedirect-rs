@@ -2,8 +2,11 @@ use std::{fmt, fmt::Display, str::FromStr};
 
 /// The serial number of a device.
 ///
-/// The notation is LLYYWWSSSSS, where LL=location code,
-/// YYWW=production datestamp (year, week) and SSSSS=unique part of the serial number.
+/// The notation is LLYYWWSSSSS, where:
+/// - LL: location code,
+/// - YYWW: production datestamp (year, week)
+/// - SSSSS: unique part of the serial number.
+///
 /// Example: HQ1328Y6TF6
 #[derive(Debug, Clone, PartialEq)]
 pub struct SerialNumber {
