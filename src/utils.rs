@@ -13,6 +13,8 @@ use std::{collections::hash_map::HashMap, fmt::Display};
 //     Ok(cleaned)
 // }
 
+
+/// "When the BMV is not synchronised, these statistics have no meaning, so "---" will be sent instead of a value"
 pub fn convert_percentage(
     rawkeys: &HashMap<&str, &str>,
     label: &str,

@@ -38,7 +38,6 @@ pub struct Bmv700 {
 }
 
 impl Map<Bmv700> for Bmv700 {
-    /// "When the BMV is not synchronised, these statistics have no meaning, so "---" will be sent instead of a value"
     /// Take a list of fields and creates an easier to use structure
     fn map_fields(fields: &Vec<Field>, _checksum: u8) -> Result<Self, VeError> {
         // Convert from list into map
