@@ -50,7 +50,7 @@ pub fn convert_u32(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<u32, Ve
     Ok(cleaned)
 }
 
-/// The goal of this function is to simply (=remove) all the \r\n and \t we have all over the place.
+/// This function simplifies (=remove) all the \r\n and \t we have all over the place.
 /// It also helps with the generation of frames where some values (such as the load) are optionnal.
 pub fn get_field_string<T: Display>(label: &str, value: Option<T>) -> String {
     match value {
@@ -79,22 +79,6 @@ pub fn convert_load_current(
     match raw {
         Some(field) => Ok(Some(field.parse::<Current>()? / 1000_f32)),
         None => Ok(None),
-    }
-}
-
-pub fn convert_err(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Err, VeError> {
-    let raw = (*rawkeys)
-        .get(label)
-        .ok_or(VeError::MissingField(label.into()))?;
-    let cleaned = raw.parse::<i32>()?;
-    let error = FromPrimitive::from_i32(cleaned);
-
-    match error {
-        Some(x) => Ok(x),
-        None => Err(VeError::Parse(format!(
-            "Error parsing integer into Err: {}",
-            raw
-        ))),
     }
 }
 

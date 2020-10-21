@@ -295,7 +295,7 @@ impl Map<MpptFrame> for MpptFrame {
             charge_state: convert_enum::<ChargeState>(&hm, "CS")?,
             mppt: convert_enum::<MpptOperationState>(&hm, "MPPT")?,
             off_reason: convert_enum::<OffReason>(&hm, "OR")?,
-            error: convert_err(&hm, "ERR")?,
+            error: convert_enum::<Err>(&hm, "ERR")?,
 
             load: convert_load(&hm, "LOAD")?,
             load_current: convert_load_current(&hm, "IL")?,
