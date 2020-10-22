@@ -1,10 +1,12 @@
 //! Crate to parse Victron VE.Direct frames and provide data in a rusty way.
 //!
 //! Library to parse the Victron Energy "VE.Direct" protocol and map the data to useful structs with clear units.
+#![feature(test)]
 
 mod bmv;
 mod checksum;
 mod constants;
+mod firmware_version;
 mod frames;
 mod map;
 mod parser;

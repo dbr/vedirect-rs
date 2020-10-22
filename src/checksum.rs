@@ -1,12 +1,12 @@
+extern crate test;
 use crate::types::*;
-use modulo::Mod;
 
 /// Calculate the checksum of some data
 pub fn calculate(data: &DataBytes<u8>) -> Checksum {
     let mut checksum = 0u8;
 
     data.iter().for_each(|x| {
-        checksum = (checksum.overflowing_add(*x)).0.modulo(255);
+        checksum = (checksum.overflowing_add(*x)).0 % 255;
     });
 
     0xff_u8.overflowing_sub(checksum).0.overflowing_add(1).0
@@ -18,14 +18,7 @@ pub fn calculate(data: &DataBytes<u8>) -> Checksum {
 /// The checksum is the complement allowing for the frame checksum to be 0x00.
 /// Reference: https://www.victronenergy.com/live/vedirect_protocol:faq#q8how_do_i_calculate_the_text_checksum
 pub fn calculate_for_frame(frame: &FrameBytes<u8>) -> Checksum {
-    let mut checksum = 0u8;
-    let message = frame.split_last().unwrap().1;
-
-    message.iter().for_each(|x| {
-        checksum = (checksum.overflowing_add(*x)).0.modulo(255);
-    });
-
-    0xff - checksum + 1
+    calculate(frame.split_last().unwrap().1)
 }
 
 pub fn append(data: &FrameBytes<u8>, checksum: Checksum) -> Vec<u8> {
@@ -126,5 +119,19 @@ mod tests_checksum {
         let frame = "\r\nfield1\tvalue1\r\nfield2\tvalue2\r\nChecksum\te".as_bytes();
 
         assert_eq!(verify(&frame), true);
+    }
+}
+
+#[cfg(test)]
+mod benchmarkss {
+    use super::*;
+    use test::Bencher;
+
+    #[bench]
+    fn bench_checksum(b: &mut Bencher) {
+        let data = vec![0x0d, 0x0a, 0xf0, 0x0f, 0xff, 0x55];
+        let checksum = calculate(&data);
+        assert_eq!(checksum, 150);
+        b.iter(|| calculate(&data));
     }
 }
