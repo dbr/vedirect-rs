@@ -122,6 +122,7 @@ mod tests_checksum {
     }
 }
 
+// TODO: switch to criterion to remain on stable
 #[cfg(test)]
 mod benchmarkss {
     use super::*;
