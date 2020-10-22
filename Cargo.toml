@@ -15,6 +15,8 @@ nom = "5.1"
 thiserror = "1.0"
 num-derive = "0.3.2"
 num-traits = "0.2.12"
+semver = "0.11.0"
+regex = "1.4.1"
 
 [dev-dependencies]
 clap = "2.33.3"
