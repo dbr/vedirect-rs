@@ -1,7 +1,6 @@
-use std::str::FromStr;
-
-use regex::Captures;
 use regex::Regex;
+use semver::*;
+use std::str::FromStr;
 
 /// Firmware Version used by fields FW and FWE
 ///
@@ -18,8 +17,6 @@ use regex::Regex;
 /// FF indicates an official release), 020801 for firmware version 2.08-beta-01.
 ///
 /// Notes: In general, Victron seems to not be using patch numbers (at least from what is released).
-use semver::*;
-
 /// The specs are blurry for those so we need to make assumptions
 #[derive(Debug, PartialEq)]
 pub enum VersionType {
@@ -30,9 +27,9 @@ pub enum VersionType {
     FWE,
 }
 
-#[derive(Debug)]
-struct FirmwareVersion {
-    version: Version,
+#[derive(Debug, PartialEq)]
+pub struct FirmwareVersion {
+    pub version: Version,
     version_type: VersionType,
 }
 
@@ -50,35 +47,62 @@ impl FromStr for FirmwareVersion {
             _ => unreachable!("It seems that our assumptions about version parsing were wrong..."),
         };
 
-        let version = match version_type {
-            VersionType::FW => {
-                let re = Regex::new(&format!(
-                    "(?P<{PRE}>[A-F])?(?P<{MAJ}>\\d)(?P<{MIN}>\\d{{2}})",
-                    MAJ = MAJ,
-                    MIN = MIN,
-                    PRE = PRE
-                ))
-                .unwrap();
-                let caps: Captures = re.captures(s).unwrap();
-                let major = caps.name(MAJ).map_or("", |m| m.as_str());
-                let minor = caps.name(MIN).map_or("", |m| m.as_str());
-                let pre = caps.name(PRE).map_or("", |m| m.as_str());
-                println!("caps: {:?}", caps);
-                println!("major: {:?}", major);
-                println!("minor: {:?}", minor);
-                println!("pre: {:?}", pre);
-                Version::new(1, 2, 3)
-                // let s = format!("{:.2}.0", u32::from_str(s).unwrap() as f32 / 100f32);
-            }
-            VersionType::FWE => {
-                // let re =
-                // Regex::new(r"(?<Major>\d{1,2})(?<Minor>\d{2})(?<Pre>[0-9A-F]{2})").unwrap();
-                Version::new(1, 2, 3)
+        let regex = match version_type {
+            VersionType::FW => Regex::new(&format!(
+                "(?P<{PRE}>[A-F])?(?P<{MAJ}>\\d)(?P<{MIN}>\\d{{2}})",
+                MAJ = MAJ,
+                MIN = MIN,
+                PRE = PRE
+            ))
+            .unwrap(),
+            VersionType::FWE => Regex::new(&format!(
+                "(?P<{MAJ}>\\d{{1,2}})(?P<{MIN}>\\d{{2}})(?P<{PRE}>[0-9A-F]{{2}})",
+                MAJ = MAJ,
+                MIN = MIN,
+                PRE = PRE
+            ))
+            .unwrap(),
+        };
+
+        let caps = match regex.captures(s) {
+            Some(captures) => captures,
+            _ => {
+                return Err(SemVerError::ParseError(format!(
+                    "Failed parsing the input <{}>",
+                    s
+                )))
             }
         };
 
+        let major = u64::from_str(caps.name(MAJ).map_or("", |m| m.as_str())).unwrap();
+        let minor = u64::from_str(caps.name(MIN).map_or("", |m| m.as_str())).unwrap();
+        let pre: &str = caps.name(PRE).map_or("", |m| m.as_str());
+
+        let pre = match version_type {
+            VersionType::FW => match pre.len() {
+                0 => "".into(),
+                _ => format!("-{}", pre),
+            },
+            VersionType::FWE => match pre {
+                "FF" => "".into(),
+                x => format!("-beta-{}", x),
+            },
+        };
+
+        let version_str = format!(
+            "{maj}.{min}.{patch}{pre}",
+            maj = major,
+            min = minor,
+            patch = 0,
+            pre = &pre
+        );
+        let version =
+            Version::parse(&version_str).expect(&format!("Failed parsing a semver from {}", s));
+
+        println!("version: {:?}", version);
+
         Ok(Self {
-            version: Version::parse(&s.to_string()).unwrap(),
+            version,
             version_type,
         })
     }
@@ -159,6 +183,24 @@ mod test_frame_finder {
     #[test]
     fn test_fw_020801() {
         let fwv = FirmwareVersion::from_str("020801").unwrap();
+
+        assert_eq!(fwv.version_type, VersionType::FWE);
+        assert_eq!(
+            fwv.version,
+            Version {
+                major: 2,
+                minor: 8,
+                patch: 0,
+                pre: vec![Identifier::AlphaNumeric("beta-01".into())],
+                build: vec!(),
+            }
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Failed parsing the input <junk>")]
+    fn test_fw_junk() {
+        let fwv = FirmwareVersion::from_str("junk").unwrap();
 
         assert_eq!(fwv.version_type, VersionType::FWE);
         assert_eq!(

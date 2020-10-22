@@ -1,10 +1,10 @@
 //! Specs for this implementation can be found at https://www.sv-zanshin.com/r/manuals/victron-ve-direct-protocol.pdf
 
-use crate::parser::Field;
 use crate::types::*;
 use crate::utils::*;
 use crate::ve_error::VeError;
 use crate::{checksum, constants::*};
+use crate::{firmware_version::FirmwareVersion, parser::Field};
 use crate::{map::Map, serial_number::SerialNumber};
 use std::{collections::hash_map::HashMap, str::FromStr};
 
@@ -15,7 +15,7 @@ pub struct MpptFrame {
     pub pid: VictronProductId,
 
     /// Label: FW, Firmware version
-    pub firmware: String, // TODO: check if that could be a semver => yes it is. 150 = v1.50
+    pub firmware: FirmwareVersion,
 
     /// The serial number of the device. The notation is LLYYMMSSSSS, where LL=location code,
     /// YYWW=production datestamp (year, week) and SSSSS=unique part of the serial number.
@@ -213,7 +213,7 @@ impl ToString for MpptFrame {
     fn to_string(&self) -> String {
         format!("{pid}{fw}{ser}{v}{i}{vpv}{ppv}{cs}{mppt}{or}{err}{load}{il}{h19}{h20}{h21}{h22}{h23}{hsds}{checksum}",
         pid = get_field_string("PID", Some(format!("0x{:X}", self.pid as u32))),
-        fw = get_field_string("FW", Some(&self.firmware)),
+        fw = get_field_string("FW", Some(&self.firmware.version.to_string())),
         ser = get_field_string("SER#", Some(&self.serial_number)),
         v = get_field_string("V", Some(self.voltage)),
         i = get_field_string("I", Some(self.current)),
@@ -245,7 +245,7 @@ impl Default for MpptFrame {
     fn default() -> Self {
         Self {
             pid: VictronProductId::BlueSolar_MPPT_75_15,
-            firmware: "150".into(),
+            firmware: FirmwareVersion::from_str("150").unwrap(),
             serial_number: SerialNumber::from_str("HQ1328A1B2C").unwrap(),
             voltage: 0.0,
             current: 0.0,
@@ -278,15 +278,11 @@ impl Map<MpptFrame> for MpptFrame {
             hm.insert(f.key, f.value);
         }
 
-        println!("ALIVE");
-        println!("{}: {:#?} ", checksum, fields);
-
         let sn = convert_string(&hm, "SER#").unwrap();
-        println!("ALIVE1");
 
         Ok(MpptFrame {
             pid: convert_product_id(&hm, "PID")?,
-            firmware: convert_string(&hm, "FW")?,
+            firmware: FirmwareVersion::from_str(&convert_string(&hm, "FW")?).unwrap(),
             serial_number: SerialNumber::from_str(&sn).unwrap(),
             voltage: convert_f32(&hm, "V")? / 1000_f32,
             current: convert_f32(&hm, "I")? / 1000_f32,
@@ -317,7 +313,6 @@ impl Into<Vec<u8>> for MpptFrame {
         let raw = str.as_bytes();
         let checksum = checksum::calculate(raw);
         checksum::append(raw, checksum)
-        // [raw.iter().cloned().collect(), vec![checksum]].concat()
     }
 }
 
@@ -331,7 +326,7 @@ impl MpptFrame {
     /// This ctor is mainly used for some of the tests to prevent having to generate frames.
     pub fn init(
         pid: VictronProductId,
-        firmware: String,
+        firmware: FirmwareVersion,
         serial_number: SerialNumber,
         voltage: Volt,
         current: Current,
@@ -405,7 +400,7 @@ mod tests_mppt {
         let device = MpptFrame::map_fields(&fields, checksum).unwrap();
 
         assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
-        assert_eq!(device.firmware, String::from("150"));
+        assert_eq!(device.firmware, FirmwareVersion::from_str("150").unwrap());
         assert_eq!(
             device.serial_number,
             SerialNumber::from_str("HQ1328A1B2C").unwrap()
@@ -439,7 +434,7 @@ mod tests_mppt {
         let device = MpptFrame::map_fields(&raw, checksum).unwrap();
 
         assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
-        assert_eq!(device.firmware, String::from("150"));
+        assert_eq!(device.firmware, FirmwareVersion::from_str("150").unwrap());
         assert_eq!(
             device.serial_number,
             SerialNumber::from_str("HQ1328A1B2C").unwrap()
@@ -488,7 +483,7 @@ mod tests_mppt {
         let device = MpptFrame::new(frame).unwrap();
 
         assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
-        assert_eq!(device.firmware, String::from("150"));
+        assert_eq!(device.firmware, FirmwareVersion::from_str("150").unwrap());
         assert_eq!(
             device.serial_number,
             SerialNumber::from_str("HQ1328A1B2C").unwrap()
@@ -516,7 +511,7 @@ mod tests_mppt {
     fn test_mppt_init() {
         let device = MpptFrame::init(
             VictronProductId::BlueSolar_MPPT_75_15,
-            "420".into(),
+            FirmwareVersion::from_str("420").unwrap(),
             SerialNumber::from_str("HQ1328A1B2C").unwrap(),
             12.34,
             1.23,
@@ -538,7 +533,7 @@ mod tests_mppt {
         );
 
         assert_eq!(device.pid, VictronProductId::BlueSolar_MPPT_75_15);
-        assert_eq!(device.firmware, String::from("420"));
+        assert_eq!(device.firmware, FirmwareVersion::from_str("420").unwrap());
         assert_eq!(
             device.serial_number,
             SerialNumber::from_str("HQ1328A1B2C").unwrap()
