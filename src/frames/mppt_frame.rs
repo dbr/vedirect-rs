@@ -8,14 +8,16 @@ use crate::{firmware_version::FirmwareVersion, parser::Field};
 use crate::{map::Map, serial_number::SerialNumber};
 use std::{collections::hash_map::HashMap, str::FromStr};
 
+use super::base;
+
 /// MPPT solar charge controllers Frame definition.
 #[derive(Debug)]
 pub struct MpptFrame {
     /// Label: PID, Product ID
-    pub pid: VictronProductId,
+    pid: VictronProductId,
 
     /// Label: FW, Firmware version
-    pub firmware: FirmwareVersion,
+    firmware: FirmwareVersion,
 
     /// The serial number of the device. The notation is LLYYMMSSSSS, where LL=location code,
     /// YYWW=production datestamp (year, week) and SSSSS=unique part of the serial number.
@@ -23,7 +25,7 @@ pub struct MpptFrame {
     ///
     /// Specs:
     /// - Frame Label: SER#
-    pub serial_number: SerialNumber,
+    serial_number: SerialNumber,
 
     /// Main (battery) voltage.
     ///
@@ -150,61 +152,34 @@ pub struct MpptFrame {
 }
 
 pub trait VictronProduct {
+    /// Get the ProductId of the device
+    fn get_product_id(&self) -> VictronProductId;
+
+    /// Get the product name
     fn get_name(&self) -> String;
+
+    /// Get the serial number of the device
+    fn get_serial_number(&self) -> &SerialNumber;
+
+    /// Get the firmware version reported by the device
+    fn get_firmware_version(&self) -> &FirmwareVersion;
 }
 
 impl VictronProduct for MpptFrame {
+    fn get_product_id(&self) -> VictronProductId {
+        self.pid
+    }
+
     fn get_name(&self) -> String {
-        match self.pid {
-            VictronProductId::BMV700 => "BMV-700".into(),
-            VictronProductId::BMV702 => "BMV-702".into(),
-            VictronProductId::BMV700H => "BMV-700H".into(),
-            VictronProductId::BlueSolar_MPPT_75_10 => "BlueSolar MPPT 75/10".into(),
-            VictronProductId::BlueSolar_MPPT_150_100 => "BlueSolar MPPT 150/100".into(),
-            VictronProductId::BlueSolar_MPPT_70_15 => "BlueSolar MPPT 70/15".into(),
-            VictronProductId::BlueSolar_MPPT_75_15 => "BlueSolar MPPT 75/15".into(),
-            VictronProductId::BlueSolar_MPPT_100_15 => "BlueSolar MPPT 100/15".into(),
-            VictronProductId::BlueSolar_MPPT_100_30_rev1 => "BlueSolar MPPT 100/30 rev1".into(),
-            VictronProductId::BlueSolar_MPPT_100_30_rev2 => "BlueSolar MPPT 100/30 rev2".into(),
-            VictronProductId::BlueSolar_MPPT_150_35_rev1 => "BlueSolar MPPT 150/35 rev1".into(),
-            VictronProductId::BlueSolar_MPPT_150_35_rev2 => "BlueSolar MPPT 150/35 rev2".into(),
-            VictronProductId::BlueSolar_MPPT_150_45 => "BlueSolar MPPT 150/45".into(),
-            VictronProductId::BlueSolar_MPPT_150_60 => "BlueSolar MPPT 150/60".into(),
-            VictronProductId::BlueSolar_MPPT_150_70 => "BlueSolar MPPT 150/70".into(),
-            VictronProductId::BlueSolar_MPPT_150_85 => "BlueSolar MPPT 150/85".into(),
-            VictronProductId::BlueSolar_MPPT_75_50 => "BlueSolar MPPT 75/50".into(),
-            VictronProductId::BlueSolar_MPPT_100_50_rev1 => "BlueSolar MPPT 100/50 rev1".into(),
-            VictronProductId::BlueSolar_MPPT_100_50_rev2 => "BlueSolar MPPT 100/50 rev2".into(),
-            VictronProductId::SmartSolar_MPPT_150_100 => "SmartSolar MPPT 150/100".into(),
-            VictronProductId::SmartSolar_MPPT_250_100 => "SmartSolar MPPT 250/100".into(),
-            VictronProductId::Phoenix_Inverter_12V_250VA_230V => {
-                "Phoenix Inverter 12V 250VA 230V".into()
-            }
-            VictronProductId::Phoenix_Inverter_24V_250VA_230V => {
-                "Phoenix Inverter 24V 250VA 230V".into()
-            }
-            VictronProductId::Phoenix_Inverter_48V_250VA_230V => {
-                "Phoenix Inverter 48V 250VA 230V".into()
-            }
-            VictronProductId::Phoenix_Inverter_12V_375VA_230V => {
-                "Phoenix Inverter 12V 375VA 230V".into()
-            }
-            VictronProductId::Phoenix_Inverter_24V_375VA_230V => {
-                "Phoenix Inverter 24V 375VA 230V".into()
-            }
-            VictronProductId::Phoenix_Inverter_48V_375VA_230V => {
-                "Phoenix Inverter 48V 375VA 230V".into()
-            }
-            VictronProductId::Phoenix_Inverter_12V_500VA_230V => {
-                "Phoenix Inverter 12V 500VA 230V".into()
-            }
-            VictronProductId::Phoenix_Inverter_24V_500VA_230V => {
-                "Phoenix Inverter 24V 500VA 230V".into()
-            }
-            VictronProductId::Phoenix_Inverter_48V_500VA_230V => {
-                "Phoenix Inverter 48V 500VA 230V".into()
-            } // _ => "Unknown".into(),
-        }
+        base::get_name(self.pid)
+    }
+
+    fn get_serial_number(&self) -> &SerialNumber {
+        &self.serial_number
+    }
+
+    fn get_firmware_version(&self) -> &FirmwareVersion {
+        &self.firmware
     }
 }
 

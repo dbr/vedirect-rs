@@ -2,7 +2,6 @@
 //!
 //! Library to parse the Victron Energy "VE.Direct" protocol and map the data to useful structs with clear units.
 
-mod bmv;
 pub mod checksum;
 mod constants;
 mod firmware_version;
@@ -14,7 +13,7 @@ mod types;
 mod utils;
 mod ve_error;
 
-pub use bmv::Bmv700;
 pub use constants::*;
+pub use frames::bmv::*;
 pub use frames::mppt_frame::*;
 pub use map::Map;

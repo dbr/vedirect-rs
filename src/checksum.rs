@@ -24,6 +24,11 @@ pub fn append(data: &FrameBytes<u8>, checksum: Checksum) -> Vec<u8> {
     [data, &vec![checksum]].concat()
 }
 
+pub fn append_checksum(data: &FrameBytes<u8>) -> Vec<u8> {
+    let checksum = calculate(data);
+    [data, &vec![checksum]].concat()
+}
+
 /// Verify a frame using its checksum. Since the checksum is calculating as complement to have checksum of the frame equal to 0,
 /// we can run the same checksum algorithm and check that the checksum is 0.
 pub fn verify(frame: &FrameBytes<u8>) -> bool {
