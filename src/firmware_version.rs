@@ -99,12 +99,48 @@ impl FromStr for FirmwareVersion {
         let version =
             Version::parse(&version_str).expect(&format!("Failed parsing a semver from {}", s));
 
-        println!("version: {:?}", version);
-
         Ok(Self {
             version,
             version_type,
         })
+    }
+}
+
+fn encode_version(version: &semver::Version, version_type: &VersionType) -> String {
+    fn identifier_to_string(id: &Identifier) -> String {
+        match id {
+            Identifier::Numeric(x) => x.to_string(),
+            Identifier::AlphaNumeric(s) => String::from(s),
+        }
+    }
+
+    let pre_str = version
+        .pre
+        .iter()
+        .map(|i| identifier_to_string(i))
+        .collect::<Vec<String>>()
+        .join("");
+
+    match version_type {
+        VersionType::FW => format!("{}{:?}{:02?}", pre_str, version.major, version.minor),
+        VersionType::FWE => {
+            let pre_hex: String = match pre_str.as_str() {
+                "" => "FF".into(),
+                // "FF" => "".into(),
+                s => {
+                    let s = u32::from_str(&s.replace("beta", "")).unwrap();
+                    format!("{:02}", s)
+                }
+            };
+
+            format!("{:02}{:02}{}", version.major, version.minor, pre_hex)
+        }
+    }
+}
+
+impl FirmwareVersion {
+    pub fn to_encoded_version(&self) -> String {
+        encode_version(&self.version, &self.version_type)
     }
 }
 
@@ -213,5 +249,51 @@ mod test_frame_finder {
                 build: vec!(),
             }
         );
+    }
+}
+
+#[cfg(test)]
+mod test_version_encoding {
+    use super::*;
+    use semver::Version;
+
+    #[test]
+    fn test_1() {
+        assert_eq!(
+            encode_version(&Version::parse("1.2.3-a").unwrap(), &VersionType::FW),
+            "a102"
+        )
+    }
+
+    #[test]
+    fn test_2() {
+        assert_eq!(
+            encode_version(&Version::parse("1.2.3").unwrap(), &VersionType::FW),
+            "102"
+        )
+    }
+
+    #[test]
+    fn test_3() {
+        assert_eq!(
+            encode_version(&Version::parse("1.50.0").unwrap(), &VersionType::FW),
+            "150"
+        )
+    }
+
+    #[test]
+    fn test_4() {
+        assert_eq!(
+            encode_version(&Version::parse("2.8.0-beta1").unwrap(), &VersionType::FWE),
+            "020801"
+        )
+    }
+
+    #[test]
+    fn test_5() {
+        assert_eq!(
+            encode_version(&Version::parse("2.38.0").unwrap(), &VersionType::FWE),
+            "0238FF"
+        )
     }
 }

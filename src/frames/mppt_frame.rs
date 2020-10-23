@@ -213,7 +213,7 @@ impl ToString for MpptFrame {
     fn to_string(&self) -> String {
         format!("{pid}{fw}{ser}{v}{i}{vpv}{ppv}{cs}{mppt}{or}{err}{load}{il}{h19}{h20}{h21}{h22}{h23}{hsds}{checksum}",
         pid = get_field_string("PID", Some(format!("0x{:X}", self.pid as u32))),
-        fw = get_field_string("FW", Some(&self.firmware.version.to_string())),
+        fw = get_field_string("FW", Some(&self.firmware.to_encoded_version())),
         ser = get_field_string("SER#", Some(&self.serial_number)),
         v = get_field_string("V", Some(self.voltage)),
         i = get_field_string("I", Some(self.current)),
@@ -384,11 +384,13 @@ mod tests_mppt {
     }
 
     #[test]
-    fn test_mppt_to_bytes() {
+    fn test_mppt_to_bytes_fw() {
         let mppt = MpptFrame::default();
         let bytes: Vec<u8> = mppt.into();
+        let bytes_no_checksum = bytes.split_last().unwrap().1;
         let frame_without_checksum = "\r\nPID\t0xA042\r\nFW\t150\r\nSER#\tHQ1328A1B2C\r\nV\t0\r\nI\t0\r\nVPV\t0\r\nPPV\t0\r\nCS\t0\r\nMPPT\t0\r\nOR\t0x00000001\r\nERR\t0\r\nH19\t0\r\nH20\t0\r\nH21\t0\r\nH22\t0\r\nH23\t0\r\nHSDS\t0\r\nChecksum\t".as_bytes();
-        assert_eq!(bytes.split_last().unwrap().1, frame_without_checksum);
+
+        assert_eq!(bytes_no_checksum, frame_without_checksum);
         assert_eq!(bytes.split_last().unwrap().0, &68);
     }
 
