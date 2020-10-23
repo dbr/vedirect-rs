@@ -18,6 +18,7 @@ num-traits = "0.2.12"
 semver = "0.11.0"
 regex = "1.4.1"
 serialport = { version = "3.3.0", optional = true }
+criterion = "0.3.3"
 
 [dev-dependencies]
 clap = "2.33.3"
@@ -26,3 +27,7 @@ serial = "0.4"
 
 [features]
 com_serialport = ["serialport"]
+
+[[bench]]
+name = "benchmarks"
+harness = false

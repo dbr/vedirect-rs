@@ -31,7 +31,7 @@ pub fn record(port: &mut dyn SerialPort) -> anyhow::Result<()> {
 
         println!("Serial data:\n{:?}", message);
 
-        match vedirect::parse(&buf) {
+        match vedirect::parser::parse(&buf) {
             Ok(result) => {
                 let (p, checksum, _remainder) = result;
                 println!("Got data: {:#?}", &p);

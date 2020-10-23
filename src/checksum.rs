@@ -1,4 +1,3 @@
-extern crate test;
 use crate::types::*;
 
 /// Calculate the checksum of some data
@@ -119,20 +118,5 @@ mod tests_checksum {
         let frame = "\r\nfield1\tvalue1\r\nfield2\tvalue2\r\nChecksum\te".as_bytes();
 
         assert_eq!(verify(&frame), true);
-    }
-}
-
-// TODO: switch to criterion to remain on stable
-#[cfg(test)]
-mod benchmarkss {
-    use super::*;
-    use test::Bencher;
-
-    #[bench]
-    fn bench_checksum(b: &mut Bencher) {
-        let data = vec![0x0d, 0x0a, 0xf0, 0x0f, 0xff, 0x55];
-        let checksum = calculate(&data);
-        assert_eq!(checksum, 150);
-        b.iter(|| calculate(&data));
     }
 }

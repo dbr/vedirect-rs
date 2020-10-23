@@ -78,11 +78,7 @@ pub fn parse(data: &[u8]) -> Result<(Vec<Field>, u8, &[u8]), VeError> {
     }?;
 
     let (fields, checksum) = parsed;
-
-    // println!("DBG: fields: {:?}   checksum:{}", fields, checksum);
-    // println!("DBG: remainder: {:?}", remainder);
     let (data, _left) = data.split_at(data.len() - remainder.len());
-    // println!("DBG: data: {:?}", data);
 
     match checksum::calculate_for_frame(data) {
         _x if _x == checksum => Ok((fields, checksum, &remainder)),
