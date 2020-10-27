@@ -1,7 +1,7 @@
 use crate::types::*;
 
 /// Calculate the checksum of some data
-pub fn calculate(data: &DataBytes<u8>) -> Checksum {
+pub fn calculate(data: &DataBytes) -> Checksum {
     let mut checksum = 0u8;
 
     data.iter().for_each(|x| {
@@ -16,22 +16,22 @@ pub fn calculate(data: &DataBytes<u8>) -> Checksum {
 /// The checksum needs to be calculated from the start (0d) till the end of the frame, excluding the checksum value from the frame (d8).
 /// The checksum is the complement allowing for the frame checksum to be 0x00.
 /// Reference: https://www.victronenergy.com/live/vedirect_protocol:faq#q8how_do_i_calculate_the_text_checksum
-pub fn calculate_for_frame(frame: &FrameBytes<u8>) -> Checksum {
+pub fn calculate_for_frame(frame: &FrameBytes) -> Checksum {
     calculate(frame.split_last().unwrap().1)
 }
 
-pub fn append(data: &FrameBytes<u8>, checksum: Checksum) -> Vec<u8> {
+pub fn append(data: &FrameBytes, checksum: Checksum) -> Vec<u8> {
     [data, &vec![checksum]].concat()
 }
 
-pub fn append_checksum(data: &FrameBytes<u8>) -> Vec<u8> {
+pub fn append_checksum(data: &FrameBytes) -> Vec<u8> {
     let checksum = calculate(data);
     [data, &vec![checksum]].concat()
 }
 
 /// Verify a frame using its checksum. Since the checksum is calculating as complement to have checksum of the frame equal to 0,
 /// we can run the same checksum algorithm and check that the checksum is 0.
-pub fn verify(frame: &FrameBytes<u8>) -> bool {
+pub fn verify(frame: &FrameBytes) -> bool {
     calculate(frame) == 0
 }
 
