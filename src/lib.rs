@@ -1,23 +1,20 @@
-mod parser;
-mod data;
+//! Crate to parse Victron VE.Direct frames and provide data in a rusty way.
+//!
+//! Library to parse the Victron Energy "VE.Direct" protocol and map the data to useful structs with clear units.
 
-use thiserror::Error;
+pub mod checksum;
+mod constants;
+mod firmware_version;
+mod frame_builder;
+mod frames;
+mod map;
+pub mod parser;
+mod serial_number;
+mod types;
+mod utils;
+mod ve_error;
 
-#[derive(Error, Debug)]
-pub enum VEError {
-    #[error("error parsing data")]
-    Parse(String),
-
-    #[error("Need more data to parse successfully")]
-    NeedMoreData,
-
-    #[error("checksum did not match recieved data")]
-    ChecksumError,
-
-    #[error("missing field from recieved data")]
-    MissingField(String),
-}
-
-// Re-export
-pub use parser::parse;
-pub use data::map_fields;
+pub use constants::*;
+pub use frames::bmv::*;
+pub use frames::mppt_frame::*;
+pub use map::Map;

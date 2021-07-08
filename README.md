@@ -21,7 +21,7 @@ Developed using a VE.Direct to USB interface cable to a BMV 700. Should work ide
 
 Cross compiled to use on a Raspberry Pi Zero W.
 
-Based of the `VE.Direct-Protocol-3.27.pdf`.
+Based of the `VE.Direct-Protocol-3.27.pdf`. Lots of relevant infos at https://www.victronenergy.com/support-and-downloads/whitepapers
 
 Currently only implements the "Text-mode" (read only) interface,
 
@@ -34,7 +34,14 @@ Early development.
 
 - [x] Initial protocol parser
 - [x] Initial mapping of most useful BMV 700 fields
-- [ ] More complete testing of parser
+- [x] More complete testing of parser
 - [ ] Mapping of all fields of BMV
-- [ ] Mapping of all fields for MPPT
+- [x] Mapping of all fields for MPPT
 - [ ] Mapping of all fields for inverters
+
+## Run examples
+
+Here are a few sample call to run the provided examples.
+
+- cargo run --example read_serial
+- cargo run --example serialport -- /dev/tty.SLAB_USBtoUART 19200
