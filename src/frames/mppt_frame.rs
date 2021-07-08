@@ -164,8 +164,8 @@ pub trait VictronProduct {
     /// Get the firmware version reported by the device
     fn get_firmware_version(&self) -> &FirmwareVersion;
 
-    /// Based on the ProductId, this function returns the appropriate variant for the Frame
-    fn get_frame(&self) -> Frame;
+    // Based on the ProductId, this function returns the appropriate variant for the Frame
+    // fn get_frame(&self) -> Frame;
 }
 
 impl VictronProduct for MpptFrame {
@@ -186,9 +186,9 @@ impl VictronProduct for MpptFrame {
     }
 
     // TODO: it makes no sense to have this implementation here
-    fn get_frame(&self) -> Frame {
-        todo!()
-    }
+    // fn get_frame(&self) -> Frame {
+    //     todo!()
+    // }
 }
 
 impl ToString for MpptFrame {

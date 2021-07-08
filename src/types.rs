@@ -32,5 +32,5 @@ pub enum Frame {
     Mppt(MpptFrame),
     Bmv(Bmv700), // TODO: that should become BMV and not BMV-700
 
-                 /* Phoenix(PhoenixFrame) */ // TODO: Bring that later
+    /* Phoenix(PhoenixFrame) */ // TODO: Bring that later
 }

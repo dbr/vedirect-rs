@@ -4,8 +4,7 @@ use crate::{
     firmware_version::FirmwareVersion,
     parser::Field,
     serial_number::SerialNumber,
-    types::DataBytes,
-    types::{Frame, FrameBytes},
+    types::Frame,
     utils::{convert_product_id, convert_string},
     ve_error::VeError,
     Map, MpptFrame, VictronProduct, VictronProductId,
@@ -27,11 +26,6 @@ pub struct Base {
     /// Specs:
     /// - Frame Label: SER#
     serial_number: SerialNumber,
-
-    /// This is the last complete frame
-    frame: Option<Box<FrameBytes>>,
-    // This buffer fills as we get data, once a frame is found, the current [frame] is replaced and the [buffer] is emptied
-    buffer: Box<DataBytes>,
 }
 
 // TODO: this is redundant with MpptFrame for instance. Can be solved using a macro.
@@ -52,18 +46,18 @@ impl VictronProduct for Base {
         &self.firmware
     }
 
-    fn get_frame(&self) -> Frame {
-        match self.pid {
-            VictronProductId::BlueSolar_MPPT_70_15
-            | VictronProductId::BlueSolar_MPPT_75_10
-            | VictronProductId::BlueSolar_MPPT_75_15 => {
-                let frame = &*self.frame.unwrap(); // TODO: That a very strong assumption (as in wrong...)
-                Frame::Mppt(MpptFrame::new(&frame).unwrap())
-            }
+    // fn get_frame(&self) -> Frame {
+    //     match self.pid {
+    //         VictronProductId::BlueSolar_MPPT_70_15
+    //         | VictronProductId::BlueSolar_MPPT_75_10
+    //         | VictronProductId::BlueSolar_MPPT_75_15 => {
+    //             // let frame = &*self.frame.unwrap(); // TODO: That a very strong assumption (as in wrong...)
+    //             // Frame::Mppt(MpptFrame::new(&frame).unwrap())
+    //         }
 
-            _ => panic!("We don't support this product ID yet"),
-        }
-    }
+    //         _ => panic!("We don't support this product ID yet"),
+    //     }
+    // }
 }
 
 impl Map<Base> for Base {
@@ -79,8 +73,8 @@ impl Map<Base> for Base {
             pid: convert_product_id(&hm, "PID")?,
             firmware: FirmwareVersion::from_str(&convert_string(&hm, "FW")?).unwrap(),
             serial_number: SerialNumber::from_str(&sn).unwrap(),
-            frame: Some(Box::new([])), // TODO: change that
-            buffer: Box::new([]),      // TODO: change that
+            // frame: Some(Box::new([])), // TODO: change that
+            // buffer: Box::new([]),      // TODO: change that
         })
     }
 }

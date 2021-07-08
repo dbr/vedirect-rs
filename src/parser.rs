@@ -197,7 +197,7 @@ mod tests_parser {
                     break;
                 }
                 Err(e) => {
-                    panic!(e);
+                    std::panic::panic_any!(e);
                 }
             };
         }

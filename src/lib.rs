@@ -5,6 +5,7 @@
 pub mod checksum;
 mod constants;
 mod firmware_version;
+mod frame_builder;
 mod frames;
 mod map;
 pub mod parser;
