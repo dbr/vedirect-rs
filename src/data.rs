@@ -100,7 +100,7 @@ fn convert_ttg(rawkeys: &HashMap<&str, &str>, label: &str) -> Result<Minute, VEE
 
 
 /// Take a list of fields and creates an easier to use structure
-pub fn map_fields(fields: &Vec<crate::parser::Field>) -> Result<Bmv700, VEError> {
+pub fn map_fields_bmv700(fields: &Vec<crate::parser::Field>) -> Result<Bmv700, VEError> {
     // Convert from list into map
     let mut hm: HashMap<&str, &str> = HashMap::new();
     for f in fields {
@@ -122,7 +122,7 @@ fn test_mapping() {
         "\r\nP\t123\r\nCE\t53\r\nSOC\t452\r\nTTG\t60\r\nRelay\tOFF\r\nAlarm\tOFF\r\nV\t232\r\nChecksum\t12".as_bytes(),
     )
     .unwrap();
-    let data = map_fields(&raw).unwrap();
+    let data = map_fields_bmv700(&raw).unwrap();
     assert_eq!(data.power, 123);
     assert_eq!(data.consumed, Some("53".into()));
     assert_eq!(data.soc, Some(45.2));

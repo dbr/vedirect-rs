@@ -15,7 +15,7 @@ pub fn record(port: &mut dyn SerialPort) -> anyhow::Result<()> {
         let r = port.read(&mut buf)?;
         let (p, _remainder) = vedirect::parse(&buf)?;
         println!("Got data: {:#?}", &p);
-        let mapped = vedirect::map_fields(&p)?;
+        let mapped = vedirect::map_fields_bmv700(&p)?;
         println!("Mapped data {:#?}", &mapped);
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
