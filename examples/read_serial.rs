@@ -15,8 +15,8 @@ impl Events<vedirect::Bmv700> for Listener {
 
 pub fn record(mut port: Box<dyn SerialPort>) -> anyhow::Result<()> {
     let mut buf: Vec<u8> = vec![0; 1024];
-    let mut listener = Listener{};
-    let mut parser = vedirect::Parser::new(& mut listener);
+    let mut listener = Listener {};
+    let mut parser = vedirect::Parser::new(&mut listener);
     loop {
         let r = port.read(buf.as_mut_slice())?;
         parser.feed(&buf[..r])?;
