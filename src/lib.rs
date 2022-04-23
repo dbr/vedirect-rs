@@ -14,7 +14,7 @@ pub enum VEError {
     #[error("checksum did not match recieved data")]
     ChecksumError,
 
-    #[error("missing field from recieved data")]
+    #[error("missing field from received data")]
     MissingField(String),
 
     #[error("ON or OFF value expected")]
