@@ -1,5 +1,5 @@
-mod parser;
 mod data;
+mod parser;
 
 use thiserror::Error;
 
@@ -16,8 +16,16 @@ pub enum VEError {
 
     #[error("missing field from recieved data")]
     MissingField(String),
+
+    #[error("ON or OFF value expected")]
+    OnOffExpected(String),
+
+    #[error("Unknown enum code")]
+    UnknownCode(String),
 }
 
 // Re-export
-pub use parser::parse;
-pub use data::map_fields;
+pub use parser::Events;
+pub use parser::Parser;
+pub use data::Bmv700;
+pub use data::MPPT;
