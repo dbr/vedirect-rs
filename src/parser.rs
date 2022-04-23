@@ -1,4 +1,4 @@
-use std::{collections::HashMap, marker::PhantomData, str::from_utf8};
+use std::{collections::HashMap, marker::PhantomData};
 
 use crate::{data, VEError};
 
@@ -87,7 +87,6 @@ impl<'a, E: Events<D>, D: data::VEDirectData> Parser<'a, D, E> {
                 None => Err(VEError::NeedMoreData),
             }
         } else {
-            eprintln!("Illegal field start");
             Err(VEError::Parse("Illegal field start".to_string()))
         }
     }
@@ -113,10 +112,6 @@ impl<'a, E: Events<D>, D: data::VEDirectData> Parser<'a, D, E> {
             {
                 match self.parse_buf[cp..].iter().position(|&c| c == LF) {
                     Some(pos) => {
-                        eprintln!(
-                            "Hex-msg: {}",
-                            from_utf8(&self.parse_buf[cp..(cp + pos)]).unwrap()
-                        );
                         if cp + pos + 1 < self.parse_buf.len() {
                             cp = cp + pos + 1;
                         } else {
