@@ -52,7 +52,9 @@ impl<'a, E: Events<D>, D: data::VEDirectData> Parser<'a, D, E> {
             match data[cp..].iter().position(|&c| c == TAB) {
                 Some(pos) => {
                     let label = String::from_utf8((&data[cp..(cp + pos)]).to_vec())
-                        .expect("invalid label string");
+                        .map_err(|e| VEError::Parse(
+                            format!("label string was invalid UTF-8: {}", e)))?;
+
                     cp = cp + pos + 1; // +1 to skip TAB
                     let endpos_res = data[cp..].iter().position(|&c| c == CR);
                     match endpos_res {
