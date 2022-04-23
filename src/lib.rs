@@ -27,7 +27,7 @@ pub enum VEError {
 }
 
 // Re-export
-pub use parser::Events;
-pub use parser::Parser;
 pub use data::Bmv700;
 pub use data::MPPT;
+pub use parser::Events;
+pub use parser::Parser;
