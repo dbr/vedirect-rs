@@ -5,7 +5,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum VEError {
-    #[error("error parsing data")]
+    #[error("error parsing data: {0}")]
     Parse(String),
 
     #[error("Need more data to parse successfully")]
