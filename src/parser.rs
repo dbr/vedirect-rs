@@ -229,7 +229,7 @@ mod tests {
                 .err()
                 .unwrap()
                 .to_string(),
-            "error parsing data".to_string()
+            "error parsing data: Illegal field start".to_string()
         );
 
         let (field, read_pos) =
