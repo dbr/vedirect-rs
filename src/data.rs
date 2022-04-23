@@ -212,7 +212,9 @@ fn convert_percentage(
         .get(label)
         .ok_or(VEError::MissingField(label.into()))?;
 
-    let s = from_utf8(&raw).expect("invalid str value");
+    let s = from_utf8(&raw)
+    .map_err(|e| VEError::Parse(format!("Failed to parse {} from {:?} - {}", label, &raw, e)))?
+    ;
     if s == "---" {
         Ok(None)
     } else {
@@ -228,7 +230,9 @@ fn convert_volt(
     let raw = rawkeys
         .get(label)
         .ok_or(VEError::MissingField(label.into()))?;
-    let cleaned = from_utf8(raw).unwrap().parse::<Volt>()? / factor;
+    let cleaned = from_utf8(raw)
+    .map_err(|e| VEError::Parse(format!("Failed to parse {} from {:?} - {}", label, &raw, e)))?
+    .parse::<Volt>()? / factor;
     Ok(cleaned)
 }
 
@@ -240,7 +244,9 @@ fn convert_ampere(
     let raw = (*rawkeys)
         .get(label)
         .ok_or(VEError::MissingField(label.into()))?;
-    let cleaned = from_utf8(raw).unwrap().parse::<Ampere>()? / factor;
+    let cleaned = from_utf8(raw)
+    .map_err(|e| VEError::Parse(format!("Failed to parse {} from {:?} - {}", label, &raw, e)))?
+    .parse::<Ampere>()? / factor;
     Ok(cleaned)
 }
 
@@ -248,7 +254,9 @@ fn convert_watt(rawkeys: &HashMap<String, Vec<u8>>, label: &str) -> Result<Watt,
     let raw = (*rawkeys)
         .get(label)
         .ok_or(VEError::MissingField(label.into()))?;
-    let cleaned = from_utf8(raw).unwrap().parse::<Watt>()?;
+    let cleaned = from_utf8(raw)
+    .map_err(|e| VEError::Parse(format!("Failed to parse {} from {:?} - {}", label, &raw, e)))?
+    .parse::<Watt>()?;
     Ok(cleaned)
 }
 
@@ -256,7 +264,9 @@ fn convert_u16(rawkeys: &HashMap<String, Vec<u8>>, label: &str) -> Result<u16, V
     let raw = (*rawkeys)
         .get(label)
         .ok_or(VEError::MissingField(label.into()))?;
-    let cleaned = from_utf8(raw).unwrap().parse::<u16>()?;
+    let cleaned = from_utf8(raw)
+        .map_err(|e| VEError::Parse(format!("Failed to parse {} from {:?} - {}", label, &raw, e)))?
+        .parse::<u16>()?;
     Ok(cleaned)
 }
 
@@ -264,14 +274,18 @@ fn convert_string(rawkeys: &HashMap<String, Vec<u8>>, label: &str) -> Result<Str
     let raw = &*rawkeys
         .get(label)
         .ok_or(VEError::MissingField(label.into()))?;
-    Ok(String::from_utf8(raw.clone()).unwrap())
+    Ok(String::from_utf8(raw.clone())
+        .map_err(|e| VEError::Parse(format!("Failed to parse {} from {:?} - {}", label, &raw, e)))?
+    )
 }
 
 fn convert_bool(rawkeys: &HashMap<String, Vec<u8>>, label: &str) -> Result<bool, VEError> {
     let raw = &*rawkeys
         .get(label)
         .ok_or(VEError::MissingField(label.into()))?;
-    let s = from_utf8(&raw).unwrap();
+    let s = from_utf8(&raw)
+    .map_err(|e| VEError::Parse(format!("Failed to parse {} from {:?} - {}", label, &raw, e)))?
+    ;
     if s == "ON" {
         Ok(true)
     } else if s == "OFF" {
@@ -285,7 +299,9 @@ fn convert_ttg(rawkeys: &HashMap<String, Vec<u8>>, label: &str) -> Result<Minute
     let raw = rawkeys
         .get(label)
         .ok_or(VEError::MissingField(label.into()))?;
-    let cleaned = from_utf8(&raw).unwrap().parse::<Minute>()?;
+    let cleaned = from_utf8(&raw)
+        .map_err(|e| VEError::Parse(format!("Failed to parse {} from {:?} - {}", label, &raw, e)))?
+        .parse::<Minute>()?;
     Ok(cleaned)
 }
 
@@ -296,7 +312,9 @@ fn convert_error_code(
     let raw = rawkeys
         .get(label)
         .ok_or(VEError::MissingField(label.into()))?;
-    let cleaned = from_utf8(&raw).unwrap().parse::<usize>()?;
+    let cleaned = from_utf8(&raw)
+        .map_err(|e| VEError::Parse(format!("Failed to parse {} from {:?} - {}", label, &raw, e)))?
+        .parse::<usize>()?;
     Ok(ErrorCode::from_repr(cleaned).unwrap_or(ErrorCode::NoError))
 }
 
@@ -307,7 +325,8 @@ fn convert_off_reason(
     let raw = rawkeys
         .get(label)
         .ok_or(VEError::MissingField(label.into()))?;
-    let cleaned = from_utf8(&raw).unwrap();
+    let cleaned = from_utf8(&raw)
+        .map_err(|e| VEError::Parse(format!("Failed to parse {} from {:?} - {}", label, &raw, e)))?;
     match cleaned {
         "0x00000000" => Ok(OffReason::None),
         "0x00000001" => Ok(OffReason::NoInputPower),
@@ -330,7 +349,9 @@ fn convert_state_of_operation(
     let raw = rawkeys
         .get(label)
         .ok_or(VEError::MissingField(label.into()))?;
-    let cleaned = from_utf8(&raw).unwrap().parse::<usize>()?;
+    let cleaned = from_utf8(&raw)
+        .map_err(|e| VEError::Parse(format!("Failed to parse {} from {:?} - {}", label, &raw, e)))?
+        .parse::<usize>()?;
     Ok(StateOfOperation::from_repr(cleaned).unwrap_or(StateOfOperation::Off))
 }
 
@@ -341,7 +362,9 @@ fn convert_tracker_mode(
     let raw = rawkeys
         .get(label)
         .ok_or(VEError::MissingField(label.into()))?;
-    let cleaned = from_utf8(&raw).unwrap().parse::<usize>()?;
+    let cleaned = from_utf8(&raw)
+        .map_err(|e| VEError::Parse(format!("Failed to parse {} from {:?} - {}", label, &raw, e)))?
+        .parse::<usize>()?;
     Ok(TrackerOperationMode::from_repr(cleaned).unwrap_or(TrackerOperationMode::Off))
 }
 
