@@ -19,7 +19,7 @@ pub fn record(mut port: Box<dyn SerialPort>) -> anyhow::Result<()> {
     let mut parser = vedirect::Parser::new(& mut listener);
     loop {
         let r = port.read(buf.as_mut_slice())?;
-        parser.feed(&buf[..r]).unwrap();
+        parser.feed(&buf[..r])?;
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
 }
