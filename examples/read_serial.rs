@@ -10,7 +10,7 @@ impl Events<vedirect::Bmv700> for Listener {
         println!("Mapped data {:#?}", &block);
     }
 
-    fn on_parse_error(&mut self, _error: VEError, _parse_buf: &Vec<u8>) {}
+    fn on_parse_error(&mut self, _error: VEError, _parse_buf: &[u8]) {}
 }
 
 pub fn record(mut port: Box<dyn SerialPort>) -> anyhow::Result<()> {

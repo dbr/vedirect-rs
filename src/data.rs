@@ -386,7 +386,7 @@ mod tests {
             assert_eq!(data.voltage, 23.2);
         }
 
-        fn on_parse_error(&mut self, _error: VEError, _parse_buf: &Vec<u8>) {
+        fn on_parse_error(&mut self, _error: VEError, _parse_buf: &[u8]) {
             assert!(false);
         }
     }
@@ -419,7 +419,7 @@ mod tests {
             assert_eq!(data.tracker_mode, TrackerOperationMode::MPPTrackerActive);
         }
 
-        fn on_parse_error(&mut self, _error: VEError, _parse_buf: &Vec<u8>) {
+        fn on_parse_error(&mut self, _error: VEError, _parse_buf: &[u8]) {
             assert!(false);
         }
     }

@@ -20,7 +20,7 @@ pub trait Events<D: data::VEDirectData> {
     fn on_complete_block(&mut self, _block: D) {}
     fn on_missing_field(&mut self, _label: String) {}
     fn on_mapping_error(&mut self, _error: VEError) {}
-    fn on_parse_error(&mut self, _error: VEError, _parse_buf: &Vec<u8>) {}
+    fn on_parse_error(&mut self, _error: VEError, _parse_buf: &[u8]) {}
 }
 
 const CR: u8 = 13;
@@ -184,7 +184,7 @@ mod tests {
             println!("Block complete");
         }
 
-        fn on_parse_error(&mut self, _error: VEError, _parse_buf: &Vec<u8>) {
+        fn on_parse_error(&mut self, _error: VEError, _parse_buf: &[u8]) {
             println!("parse error");
         }
     }
@@ -252,7 +252,7 @@ mod tests {
             self.data.push(block);
         }
 
-        fn on_parse_error(&mut self, _error: VEError, _parse_buf: &Vec<u8>) {
+        fn on_parse_error(&mut self, _error: VEError, _parse_buf: &[u8]) {
             println!("parse error");
         }
     }
