@@ -27,11 +27,4 @@ Currently only implements the "Text-mode" (read only) interface,
 
 ## Status
 
-Early development.
-
-- [x] Initial protocol parser
-- [x] Initial mapping of most useful BMV 700 fields
-- [ ] More complete testing of parser
-- [ ] Mapping of all fields of BMV
-- [ ] Mapping of all fields for MPPT
-- [ ] Mapping of all fields for inverters
+Functional and reasonably well tested. Main limitation is that not all devices are handled, only the BMV battery monitor and solar charge controllers
