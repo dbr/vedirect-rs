@@ -2,7 +2,6 @@
 
 [![crates.io badge][crate_badge]][crate]
 [![docs.rs badge][docs_badge]][docs]
-[![travis-ci badge][ci_badge]][ci]
 
 Library to parse the Victron Energy "VE.Direct" protocol and map the data to useful structs with clear units.
 
@@ -12,8 +11,6 @@ Can be used in conjuction with the `serial` library to pull battery status infor
 [crate]: https://crates.io/crates/vedirect
 [docs]: https://docs.rs/vedirect/
 [docs_badge]: https://docs.rs/vedirect/badge.svg
-[ci]: https://travis-ci.org/dbr/vedirect-rs
-[ci_badge]: https://travis-ci.org/dbr/vedirect-rs.svg?branch=master
 
 ## Details
 
