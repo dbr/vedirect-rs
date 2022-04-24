@@ -8,6 +8,26 @@ pub struct VEField {
     pub value: Vec<u8>,
 }
 
+/// Parser is fed with bytes, and sends events to the supplied
+/// `listener` object.
+///
+/// # Example
+/// ```rust
+/// use vedirect::{Events, Parser};
+///
+/// struct ExampleListener;
+/// 
+/// impl Events<vedirect::Bmv700> for ExampleListener {
+///     fn on_complete_block(&mut self, block: vedirect::Bmv700) {
+///         println!("Mapped data {:#?}", &block);
+///     }
+/// }
+/// 
+/// let mut listener = ExampleListener {};
+/// let mut parser = Parser::new(&mut listener);
+/// parser.feed(b"\r\nPID\t0xA053\r\nFW\t159").unwrap();
+/// ```
+
 pub struct Parser<'a, D: data::VEDirectData, E: Events<D>> {
     first_parse: bool,
     parse_buf: Vec<u8>,
@@ -30,6 +50,7 @@ const COLON: u8 = 58;
 const A: u8 = 65;
 
 impl<'a, E: Events<D>, D: data::VEDirectData> Parser<'a, D, E> {
+    /// Create parser
     pub fn new(listener: &'a mut E) -> Self {
         Parser {
             first_parse: true,
@@ -92,6 +113,8 @@ impl<'a, E: Events<D>, D: data::VEDirectData> Parser<'a, D, E> {
         }
     }
 
+    /// Supply bytes from device to parser. See example on [`Parser`]
+    /// or the `read_serial` example for details on how to use.
     pub fn feed(&mut self, data: &[u8]) -> Result<(), VEError> {
         if self.first_parse {
             // skip to first field start as we might have started somewhere in the middle
