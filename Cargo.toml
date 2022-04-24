@@ -1,7 +1,6 @@
 [package]
 name = "vedirect"
-version = "0.1.0"
-authors = ["dbr <dbr.onix@gmail.com>"]
+version = "0.2.0"
 edition = "2018"
 
 license = "Unlicense"
@@ -9,6 +8,7 @@ description = "Library to parse the Victron Energy VE.Direct protocol and map th
 repository = "https://github.com/dbr/vedirect-rs/"
 readme = "README.md"
 keywords = ["solar", "serial", "parser", "vedirect"]
+exclude = ["/fuzz-target"]
 
 [dependencies]
 thiserror = "1.0"
