@@ -48,7 +48,7 @@ impl<'a, E: Events<D>, D: data::VEDirectData> Parser<'a, D, E> {
         let mut cp = read_pos;
 
         if data[cp] == CR && data[cp + 1] == LF {
-            cp = cp + 2;
+            cp += 2;
             match data[cp..].iter().position(|&c| c == TAB) {
                 Some(pos) => {
                     let label =

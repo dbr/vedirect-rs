@@ -1,4 +1,5 @@
 #![deny(unsafe_code)]
+#![allow(clippy::upper_case_acronyms)]
 
 mod data;
 mod parser;
