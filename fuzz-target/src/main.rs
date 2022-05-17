@@ -11,7 +11,7 @@ impl Events<vedirect::Bmv700> for Listener {
         println!("Mapped data {:#?}", &block);
     }
 
-    fn on_parse_error(&mut self, error: VEError, _parse_buf: &Vec<u8>) {
+    fn on_parse_error(&mut self, error: VEError, _parse_buf: &[u8]) {
         println!("Parse error {:#?}", &error);
     }
 }
