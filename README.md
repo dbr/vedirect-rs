@@ -24,6 +24,11 @@ Currently only implements the "Text-mode" (read only) interface,
 
 > The VE.Direct interface includes two modes: Text-mode and the HEX-mode. The purpose of the Text-mode is to make retrieving information extremely simple. The product will periodically transmit all run-time fields. The HEX-mode allows not only to read data but also write data, for example, change settings.
 
+## Testing
+
+The project has tests which can be run by usual `cargo test`
+
+Additionally there is a basic fuzzing setup for the parser which can be run easily using [`cargo-afl`](https://crates.io/crates/afl) - see `fuzz-target/run-fuzzer.sh`
 
 ## Status
 
