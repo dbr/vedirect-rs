@@ -375,10 +375,13 @@ mod tests {
     use super::*;
     use crate::Events;
 
-    struct CheckerBmv700;
+    struct CheckerBmv700 {
+        block_count: usize,
+    }
 
     impl Events<Bmv700> for CheckerBmv700 {
         fn on_complete_block(&mut self, data: Bmv700) {
+            self.block_count += 1;
             assert_eq!(data.power, 123);
             assert_eq!(data.consumed, Some("53".into()));
             assert_eq!(data.soc, Some(45.2));
@@ -394,15 +397,19 @@ mod tests {
     #[test]
     fn test_mapping() {
         let input = "\r\nP\t123\r\nCE\t53\r\nSOC\t452\r\nTTG\t60\r\nRelay\tOFF\r\nAlarm\tOFF\r\nV\t232\r\nChecksum\t12";
-        let mut checker = CheckerBmv700 {};
+        let mut checker = CheckerBmv700 { block_count: 0 };
         let mut parser = crate::Parser::new(&mut checker);
         parser.feed(input.as_bytes()).unwrap();
+        assert_eq!(checker.block_count, 1);
     }
 
-    struct CheckerMPPT;
+    struct CheckerMPPT {
+        block_count: usize,
+    }
 
     impl Events<MPPT> for CheckerMPPT {
         fn on_complete_block(&mut self, data: MPPT) {
+            self.block_count += 1;
             assert_eq!(data.channel1_voltage, 12.54);
             assert_eq!(data.battery_current, 0.04);
             assert_eq!(data.panel_voltage, 18.54);
@@ -426,8 +433,9 @@ mod tests {
     #[test]
     fn test_mapping_mppt() {
         let input = "\r\nPID\t0xA053\r\nFW\t159\r\nSER#\tHQ2132QY2KR\r\nV\t12540\r\nI\t40\r\nVPV\t18540\r\nPPV\t5\r\nCS\t3\r\nMPPT\t2\r\nOR\t0x00000000\r\nERR\t0\r\nLOAD\tON\r\nIL\t300\r\nH19\t144\r\nH20\t1\r\nH21\t6\r\nH22\t4\r\nH23\t14\r\nHSDS\t16\r\nChecksum\t?";
-        let mut checker = CheckerMPPT {};
+        let mut checker = CheckerMPPT { block_count: 0 };
         let mut parser = crate::Parser::new(&mut checker);
         parser.feed(input.as_bytes()).unwrap();
+        assert_eq!(checker.block_count, 1);
     }
 }
