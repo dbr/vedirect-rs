@@ -16,13 +16,13 @@ pub struct VEField {
 /// use vedirect::{Events, Parser};
 ///
 /// struct ExampleListener;
-/// 
+///
 /// impl Events<vedirect::Bmv700> for ExampleListener {
 ///     fn on_complete_block(&mut self, block: vedirect::Bmv700) {
 ///         println!("Mapped data {:#?}", &block);
 ///     }
 /// }
-/// 
+///
 /// let mut listener = ExampleListener {};
 /// let mut parser = Parser::new(&mut listener);
 /// parser.feed(b"\r\nPID\t0xA053\r\nFW\t159").unwrap();
