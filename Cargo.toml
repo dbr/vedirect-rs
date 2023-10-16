@@ -12,8 +12,8 @@ exclude = ["/fuzz-target"]
 
 [dependencies]
 thiserror = "1.0"
-strum = "0.24"
-strum_macros = "0.24"
+strum = "0.25"
+strum_macros = "0.25"
 
 [dev-dependencies]
 serialport = { version = "4.1", default-features = false }
